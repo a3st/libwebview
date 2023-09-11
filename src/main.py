@@ -7,6 +7,6 @@ def window_close():
     app.quit()
 
 
-app.run()
+app.run(index_file="file:///E:/GitHub/pyWebUI/src/index.html")
 
 # window_close()

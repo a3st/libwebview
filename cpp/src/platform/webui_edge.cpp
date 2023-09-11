@@ -36,7 +36,13 @@ auto WebUIEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -
             ::PostQuitMessage(0);
         } break;
         case WM_SIZE: {
-            
+            if(!window->controller) {
+                return 0;
+            }
+
+            auto rect = RECT {};
+            ::GetClientRect(window->window, &rect);
+            window->controller->put_Bounds(rect);
         } break;
         default: {
             return ::DefWindowProc(hwnd, msg, wparam, lparam);
@@ -46,6 +52,19 @@ auto WebUIEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -
 }
 
 auto WebUIEdge::navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT {
+    if(!is_initialized) {
+        is_initialized = true;
+
+        ::ShowWindow(window, SW_SHOWNORMAL);
+        ::UpdateWindow(window);
+        ::SetFocus(window);
+
+        controller->put_IsVisible(TRUE);
+
+        auto rect = RECT {};
+        ::GetClientRect(window, &rect);
+        controller->put_Bounds(rect);
+    }
     return S_OK;
 }
 
@@ -53,7 +72,8 @@ auto WebUIEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMess
     return S_OK;
 }
 
-WebUIEdge::WebUIEdge(std::string_view const title, uint32_t const width, uint32_t const height, std::string_view const index_file) {
+WebUIEdge::WebUIEdge(std::string_view const title, uint32_t const width, uint32_t const height) :
+    is_initialized(false) {
     THROW_HRESULT_IF_FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
 
     auto wnd_class = WNDCLASS {
@@ -107,25 +127,16 @@ WebUIEdge::WebUIEdge(std::string_view const title, uint32_t const width, uint32_
         nullptr, 
         Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
             [&, this](HRESULT error_code, ICoreWebView2Environment* created_environment) -> HRESULT {
-                THROW_HRESULT_IF_FAILED(error_code);
-
                 environment.attach(created_environment);
                 auto environment3 = environment.try_as<ICoreWebView2Environment3>();
 
-                if(!environment) {
-                    std::cout << 123 << std::endl;
-                }
-
-                /*auto result = environment3->CreateCoreWebView2Controller(
+                auto result = environment3->CreateCoreWebView2Controller(
                     window, 
                     Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
                         [&, this](HRESULT error_code, ICoreWebView2Controller* created_controller) -> HRESULT {
-                            //controller.attach(created_controller);
+                            controller.attach(created_controller);
 
-                            auto result = controller->get_CoreWebView2(webview.put());
-                            if(FAILED(result)) {
-                                return result;
-                            }
+                            controller->get_CoreWebView2(webview.put());
 
                             auto webview3 = webview.try_as<ICoreWebView2_3>();
 
@@ -140,25 +151,35 @@ WebUIEdge::WebUIEdge(std::string_view const title, uint32_t const width, uint32_
                             );
 
                             winrt::com_ptr<ICoreWebView2Settings> settings;
-                            result = webview3->get_Settings(settings.put());
-                            if(FAILED(result)) {
-                                return result;
-                            }
+                            webview3->get_Settings(settings.put());
 
+                            settings->put_AreDevToolsEnabled(TRUE);
+                            settings->put_AreDefaultContextMenusEnabled(TRUE);
+
+                            webview3->AddScriptToExecuteOnDocumentCreated(
+                                L"let __callbacks = {}; let __callbacks_index = 0;", 
+                                nullptr
+                            );
+
+                            controller->AddRef();
                             return S_OK;
                         }
                     ).Get()
-                );*/
+                );
 
-                return S_OK;
+                environment->AddRef();
+                return result;
             }
         ).Get()
     ));
 
-    ::ShowWindow(window, SW_SHOWNORMAL);
+    
 }
 
-auto WebUIEdge::run() -> void {
+auto WebUIEdge::run(std::string_view const index_file) -> void {
+    // auto webview3 = webview.try_as<ICoreWebView2_3>();
+    // webview3->Navigate(wstring_convert(index_file).c_str());
+
     auto msg = MSG {};
     bool running = true;
 

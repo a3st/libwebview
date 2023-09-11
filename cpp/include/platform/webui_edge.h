@@ -11,11 +11,10 @@ public:
     WebUIEdge(
         std::string_view const title, 
         uint32_t const width, 
-        uint32_t const height,
-        std::string_view const index_file
+        uint32_t const height
     );
 
-    auto run() -> void;
+    auto run(std::string_view const index_file) -> void;
 
 private:
 

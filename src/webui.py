@@ -22,7 +22,7 @@ class Application:
         self.lib.create_web_ui.argtypes = [ctypes.c_char_p, ctypes.c_uint32, ctypes.c_uint32]
         self.lib.create_web_ui.restype = ctypes.c_void_p
 
-        self.lib.web_ui_run.argtypes = [ctypes.c_void_p]
+        self.lib.web_ui_run.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
 
         self.web_ui = self.lib.create_web_ui(title.encode(), 800, 600)
 
@@ -39,6 +39,6 @@ class Application:
         return wrapper
 
 
-    def run(self):
-        self.lib.web_ui_run(self.web_ui)
+    def run(self, index_file: str):
+        self.lib.web_ui_run(self.web_ui, index_file.encode())
 
