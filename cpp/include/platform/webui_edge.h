@@ -24,6 +24,7 @@ private:
     winrt::com_ptr<ICoreWebView2> webview;
     EventRegistrationToken token;
     bool is_initialized;
+    std::binary_semaphore semaphore;
 
     static auto window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT;
 

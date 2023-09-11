@@ -73,7 +73,7 @@ auto WebUIEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMess
 }
 
 WebUIEdge::WebUIEdge(std::string_view const title, uint32_t const width, uint32_t const height) :
-    is_initialized(false) {
+    is_initialized(false), semaphore(0) {
     THROW_HRESULT_IF_FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
 
     auto wnd_class = WNDCLASS {
@@ -128,57 +128,64 @@ WebUIEdge::WebUIEdge(std::string_view const title, uint32_t const width, uint32_
         Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
             [&, this](HRESULT error_code, ICoreWebView2Environment* created_environment) -> HRESULT {
                 environment.attach(created_environment);
-                auto environment3 = environment.try_as<ICoreWebView2Environment3>();
-
-                auto result = environment3->CreateCoreWebView2Controller(
-                    window, 
-                    Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
-                        [&, this](HRESULT error_code, ICoreWebView2Controller* created_controller) -> HRESULT {
-                            controller.attach(created_controller);
-
-                            controller->get_CoreWebView2(webview.put());
-
-                            auto webview3 = webview.try_as<ICoreWebView2_3>();
-
-                            webview3->add_NavigationCompleted(
-                                Callback<ICoreWebView2NavigationCompletedEventHandler>(this, &WebUIEdge::navigation_completed).Get(), 
-                                &token
-                            );
-
-                            webview3->add_WebMessageReceived(
-                                Callback<ICoreWebView2WebMessageReceivedEventHandler>(this, &WebUIEdge::web_message_received).Get(), 
-                                &token
-                            );
-
-                            winrt::com_ptr<ICoreWebView2Settings> settings;
-                            webview3->get_Settings(settings.put());
-
-                            settings->put_AreDevToolsEnabled(TRUE);
-                            settings->put_AreDefaultContextMenusEnabled(TRUE);
-
-                            webview3->AddScriptToExecuteOnDocumentCreated(
-                                L"let __callbacks = {}; let __callbacks_index = 0;", 
-                                nullptr
-                            );
-
-                            controller->AddRef();
-                            return S_OK;
-                        }
-                    ).Get()
-                );
-
                 environment->AddRef();
-                return result;
+                semaphore.release();
+                return S_OK;
             }
         ).Get()
     ));
 
-    
+    auto msg = MSG {};
+
+    while(!semaphore.try_acquire() && ::GetMessage(&msg, nullptr, 0, 0)) {
+        ::TranslateMessage(&msg);
+        ::DispatchMessage(&msg);
+    }
+
+    THROW_HRESULT_IF_FAILED(environment->CreateCoreWebView2Controller(
+        window, 
+        Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
+            [&, this](HRESULT error_code, ICoreWebView2Controller* created_controller) -> HRESULT {
+                controller.attach(created_controller);
+                controller->AddRef();
+                semaphore.release();
+                return S_OK;
+            }
+        ).Get()
+    ));
+
+    while(!semaphore.try_acquire() && ::GetMessage(&msg, nullptr, 0, 0)) {
+        ::TranslateMessage(&msg);
+        ::DispatchMessage(&msg);
+    }
+
+    THROW_HRESULT_IF_FAILED(controller->get_CoreWebView2(webview.put()));
+
+    webview->add_NavigationCompleted(
+        Callback<ICoreWebView2NavigationCompletedEventHandler>(this, &WebUIEdge::navigation_completed).Get(), 
+        &token
+    );
+
+    webview->add_WebMessageReceived(
+        Callback<ICoreWebView2WebMessageReceivedEventHandler>(this, &WebUIEdge::web_message_received).Get(), 
+        &token
+    );
+
+    winrt::com_ptr<ICoreWebView2Settings> settings;
+    THROW_HRESULT_IF_FAILED(webview->get_Settings(settings.put()));
+
+    settings->put_AreDevToolsEnabled(TRUE);
+    settings->put_AreDefaultContextMenusEnabled(TRUE);
+
+    webview->AddScriptToExecuteOnDocumentCreated(
+        L"let __callbacks = {}; let __callbacks_index = 0;", 
+        nullptr
+    );
 }
 
 auto WebUIEdge::run(std::string_view const index_file) -> void {
-    // auto webview3 = webview.try_as<ICoreWebView2_3>();
-    // webview3->Navigate(wstring_convert(index_file).c_str());
+    std::cout << index_file << std::endl;
+    webview->Navigate(wstring_convert(index_file).c_str());
 
     auto msg = MSG {};
     bool running = true;
