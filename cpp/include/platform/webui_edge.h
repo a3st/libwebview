@@ -1,20 +1,29 @@
 #pragma once
 
+#define NOMINMAX
 #include <Windows.h>
+#undef NOMINMAX
 #include <dwmapi.h>
 #include <winrt/base.h>
 #include <webview2/WebView2.h>
+
+using bind_func_t = std::function<void(std::string_view)>;
 
 class WebUIEdge {
 public:
 
     WebUIEdge(
         std::string_view const title, 
-        uint32_t const width, 
-        uint32_t const height
+        std::tuple<uint32_t, uint32_t> const size, 
+        bool const resizeable,
+        std::tuple<uint32_t, uint32_t> const min_size,
+        std::tuple<uint32_t, uint32_t> const max_size,
+        bool const is_debug
     );
 
     auto run(std::string_view const index_file) -> void;
+
+    auto bind(std::string_view const func_name, bind_func_t&& callback) -> void;
 
 private:
 
@@ -25,6 +34,9 @@ private:
     EventRegistrationToken token;
     bool is_initialized;
     std::binary_semaphore semaphore;
+    std::tuple<uint32_t, uint32_t> min_window_size;
+    std::tuple<uint32_t, uint32_t> max_window_size;
+    std::map<std::string, bind_func_t> js_callbacks;
 
     static auto window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT;
 

@@ -10,11 +10,13 @@ include_directories(
 )
 
 add_library(WebUIEdge SHARED
+    src/string_utils.cpp
     src/platform/webui_edge.cpp
     src/webui.cpp
 )
 
 target_include_directories(WebUIEdge PRIVATE
+    "${PROJECT_SOURCE_DIR}/thirdparty/json/include"
     "${PROJECT_SOURCE_DIR}/thirdparty/webview2/include"
 )
 

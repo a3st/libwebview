@@ -1,11 +1,18 @@
 from webui import Application
 
-app = Application(title="WebUI Template", width=800, height=600, backend='edge')
+app = Application(
+    title="WebUI Template", 
+    size=(800, 600), 
+    resizeable=True, 
+    min_size=(300, 300), 
+    max_size=(900, 700), 
+    backend='edge'
+)
 
 
 @app.on
 def window_close():
-    app.quit()
+    print("Привет мир!")
 
 
-app.run(index_file="file:///E:/GitHub/pyWebUI/src/index.html")
+app.run(index_path="src/index.html")
