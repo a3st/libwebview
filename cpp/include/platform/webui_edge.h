@@ -25,6 +25,8 @@ public:
 
     auto bind(std::string_view const func_name, bind_func_t&& callback) -> void;
 
+    auto execute_js(std::string_view const js) -> void;
+
 private:
 
     HWND window;
@@ -33,6 +35,7 @@ private:
     winrt::com_ptr<ICoreWebView2> webview;
     EventRegistrationToken token;
     bool is_initialized;
+    DWORD main_thread_id;
     std::binary_semaphore semaphore;
     std::tuple<uint32_t, uint32_t> min_window_size;
     std::tuple<uint32_t, uint32_t> max_window_size;
@@ -41,5 +44,6 @@ private:
     static auto window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT;
 
     auto navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT;
+    
     auto web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT;
 };

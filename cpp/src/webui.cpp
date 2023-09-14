@@ -30,6 +30,5 @@ void web_ui_run(CWebUI web_ui, char const* index_file) {
 
 
 void web_ui_bind(CWebUI web_ui, char const* func_name, void(*callback)(void*, char const*), void* args) {
-    std::cout << &callback << std::endl;
     reinterpret_cast<WebUIPlatform*>(web_ui)->bind(func_name, [callback, args](std::string_view const data) { callback(args, data.data()); });
 }

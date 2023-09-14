@@ -1,2 +1,3 @@
 cpp/build/*
 src/__pycache__/*
+src/webui/__pycache__/*

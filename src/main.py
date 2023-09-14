@@ -1,4 +1,5 @@
-from webui import Application
+from webui.core import Application
+from webui.request import request
 
 app = Application(
     title="WebUI Template", 
@@ -12,7 +13,7 @@ app = Application(
 
 @app.on
 def window_close():
-    print("Привет мир!")
+    print("Привет мир! args:", request.data)
 
 
 app.run(index_path="src/index.html")

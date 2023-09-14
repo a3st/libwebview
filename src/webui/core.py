@@ -1,20 +1,20 @@
-from ctypes import cdll
 import ctypes
+from ctypes import cdll
 import platform
-import pathlib
 import os
+import webui.request as request
 
 class Application:
     def __init__(
-            self, 
-            title: str, 
-            size: tuple[int, int],
-            resizeable: bool = False,
-            min_size: tuple[int, int] = (-1, -1),
-            max_size: tuple[int, int] = (-1, -1),
-            is_debug: bool = True, 
-            backend: str='default',
-        ):
+        self, 
+        title: str, 
+        size: tuple[int, int],
+        resizeable: bool = False,
+        min_size: tuple[int, int] = (-1, -1),
+        max_size: tuple[int, int] = (-1, -1),
+        is_debug: bool = True, 
+        backend: str='default',
+    ):
         match backend:
             case 'edge':
                 self.lib = cdll.LoadLibrary("cpp/build/WebUIEdge.dll")
@@ -23,7 +23,7 @@ class Application:
             case 'webkit':
                 self.lib = cdll.LoadLibrary("cpp/build/WebUIWebkit.dll")
             case 'default':
-                #match platform.platform():
+                # match platform.platform():
                 #    case 'Windows':
                 #        self.lib
                 pass
@@ -42,7 +42,7 @@ class Application:
 
         self.lib.web_ui_run.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
 
-        self.BIND_FUNC = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_void_p, ctypes.c_char_p)
+        self.BIND_FUNC = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_char_p)
 
         self.lib.web_ui_bind.argtypes = [
             ctypes.c_void_p, 
@@ -64,7 +64,7 @@ class Application:
             is_debug
         )
 
-        self.callbacks = []
+        self.js_callbacks = []
 
     
     def quit(self):
@@ -72,16 +72,16 @@ class Application:
 
 
     def on(self, func):
-        def wrapper():
-            print(func.__name__)
+        def wrapper(ctx, args):
+            request.request.on(args)
             func()
 
-        self.callbacks.append(self.BIND_FUNC(lambda app, args: wrapper()))
+        self.js_callbacks.append(self.BIND_FUNC(lambda ctx, args: wrapper(ctx, args)))
         
         self.lib.web_ui_bind(
             self.web_ui,
             func.__name__.encode(),
-            self.callbacks[0],
+            self.js_callbacks[-1],
             None
         )
         return wrapper

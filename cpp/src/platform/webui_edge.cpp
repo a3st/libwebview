@@ -6,6 +6,8 @@ using namespace Microsoft::WRL;
 using json = nlohmann::json;
 #include "string_utils.h"
 
+using dispatch_func_t = std::function<HRESULT()>;
+
 #define THROW_HRESULT_IF_FAILED(HRESULT) if(FAILED(HRESULT))\
 { throw std::runtime_error(std::format("An error occurred while processing the WINAPI (HRESULT: {:04x})", HRESULT)); }
 
@@ -101,6 +103,7 @@ auto WebUIEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMess
 
     if(found != js_callbacks.end()) {
         found->second(args_data);
+
     }
     
     ::CoTaskMemFree(buffer);
@@ -116,6 +119,7 @@ WebUIEdge::WebUIEdge(
     bool const is_debug
 ) :
     is_initialized(false), semaphore(0), 
+    main_thread_id(::GetCurrentThreadId()),
     min_window_size(min_size), max_window_size(max_size) 
 {
     THROW_HRESULT_IF_FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
@@ -241,7 +245,7 @@ auto WebUIEdge::run(std::string_view const index_file) -> void {
     for(auto const& [name, func] : js_callbacks) {
         std::wstring js = L"let " + string_utils::to_wstring(name) +
             LR"( = function() {
-                let index = __callbacks_index++;
+                let index = __callbacks_index ++;
 
                 let promise = new Promise(function(resolve, reject) {
                         __callbacks[index] = {
@@ -275,14 +279,14 @@ auto WebUIEdge::run(std::string_view const index_file) -> void {
                     running = false;
                 } break;
                 case WM_APP: {
-                    // auto func = reinterpret_cast<dispatch_func_t*>(msg.lParam);
-                    // THROW_HRESULT_IF_FAILED((*func)());
-                    // delete func;
+                    auto func = reinterpret_cast<dispatch_func_t*>(msg.lParam);
+                    THROW_HRESULT_IF_FAILED((*func)());
+                    delete func;
                 } break;
                 default: {
                     if(msg.hwnd) {
                         ::TranslateMessage(&msg);
-                        ::DispatchMessageA(&msg);
+                        ::DispatchMessage(&msg);
                     }
                 } break;
             }
@@ -295,4 +299,21 @@ auto WebUIEdge::bind(std::string_view const func_name, bind_func_t&& callback) -
         throw std::runtime_error("Cannot to bind a function that already exists");
     }
     js_callbacks.insert({ std::string(func_name), std::move(callback) });
+}
+
+
+auto WebUIEdge::execute_js(std::string_view const js) -> void {
+    if(::PostThreadMessage(
+            main_thread_id, 
+            WM_APP, 
+            WM_USER, 
+            reinterpret_cast<LPARAM>(
+                new dispatch_func_t([data = string_utils::to_wstring(js), this]() -> HRESULT {
+                    return webview->ExecuteScript(data.c_str(), nullptr);
+                })
+            )
+        ) == 0
+    ) {
+        throw std::runtime_error("An error occurred while sending a message to the thread");
+    }
 }
