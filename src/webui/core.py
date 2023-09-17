@@ -2,7 +2,7 @@ import ctypes
 from ctypes import cdll
 import platform
 import os
-import webui.request as request
+import json
 
 class Application:
     def __init__(
@@ -42,14 +42,25 @@ class Application:
 
         self.lib.web_ui_run.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
 
-        self.BIND_FUNC = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_char_p)
+        self.BIND_FUNC = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_uint64, ctypes.c_char_p)
 
         self.lib.web_ui_bind.argtypes = [
-            ctypes.c_void_p, 
+            ctypes.c_void_p,
             ctypes.c_char_p, 
             self.BIND_FUNC,
             ctypes.c_void_p
         ]
+
+        self.lib.web_ui_result.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_uint64,
+            ctypes.c_bool,
+            ctypes.c_char_p
+        ]
+
+        self.lib.web_ui_quit.argtypes = [ ctypes.c_void_p ]
+
+        self.lib.delete_web_ui.argtypes = [ ctypes.c_void_p ]
 
         width, height = size
         min_width, min_height = min_size
@@ -67,16 +78,29 @@ class Application:
         self.js_callbacks = []
 
     
+    def __del__(self):
+        self.lib.delete_web_ui(self.web_ui)
+
+
     def quit(self):
-        pass
+        self.lib.web_ui_quit(self.web_ui)
 
 
     def on(self, func):
-        def wrapper(ctx, args):
-            request.request.on(args)
-            func()
+        def wrapper(ctx, index, args):
+            data = json.loads(args)
+            try:
+                ret = func(*data[0])
+                if ret is not None:
+                    data = json.dumps(ret)
+                    self.lib.web_ui_result(self.web_ui, index, True, data.encode())
+                else:
+                    self.lib.web_ui_result(self.web_ui, index, True, "{}".encode())
+            except Exception as e:
+                data = json.dumps({ "error" : str(e) })
+                self.lib.web_ui_result(self.web_ui, index, False, data.encode())
 
-        self.js_callbacks.append(self.BIND_FUNC(lambda ctx, args: wrapper(ctx, args)))
+        self.js_callbacks.append(self.BIND_FUNC(lambda ctx, index, args: wrapper(ctx, index, args)))
         
         self.lib.web_ui_bind(
             self.web_ui,

@@ -34,8 +34,14 @@ __declspec(dllexport) CWebUI create_web_ui(
     bool const is_debug
 );
 
+__declspec(dllexport) void delete_web_ui(CWebUI web_ui);
+
 __declspec(dllexport) void web_ui_run(CWebUI web_ui, char const* index_file);
 
-__declspec(dllexport) void web_ui_bind(CWebUI web_ui, char const* func_name, void(*callback)(void*, char const*), void* args);
+__declspec(dllexport) void web_ui_bind(CWebUI web_ui, char const* func_name, void(*callback)(void*, uint64_t, char const*), void* args);
+
+__declspec(dllexport) void web_ui_result(CWebUI web_ui, uint64_t index, bool success, char const* data);
+
+__declspec(dllexport) void web_ui_quit(CWebUI web_ui);
 
 }

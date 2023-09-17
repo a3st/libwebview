@@ -11,6 +11,7 @@ using dispatch_func_t = std::function<HRESULT()>;
 #define THROW_HRESULT_IF_FAILED(HRESULT) if(FAILED(HRESULT))\
 { throw std::runtime_error(std::format("An error occurred while processing the WINAPI (HRESULT: {:04x})", HRESULT)); }
 
+
 auto WebUIEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT {
     auto window = reinterpret_cast<WebUIEdge*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
     switch(msg) {
@@ -73,6 +74,7 @@ auto WebUIEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -
     return 0;
 }
 
+
 auto WebUIEdge::navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT {
     if(!is_initialized) {
         is_initialized = true;
@@ -90,6 +92,7 @@ auto WebUIEdge::navigation_completed(ICoreWebView2* sender, ICoreWebView2Navigat
     return S_OK;
 }
 
+
 auto WebUIEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
     LPWSTR buffer;
     args->TryGetWebMessageAsString(&buffer);
@@ -102,13 +105,13 @@ auto WebUIEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMess
     auto found = js_callbacks.find(func_name);
 
     if(found != js_callbacks.end()) {
-        found->second(args_data);
-
+        found->second(index, args_data);
     }
     
     ::CoTaskMemFree(buffer);
     return S_OK;
 }
+
 
 WebUIEdge::WebUIEdge(
     std::string_view const title, 
@@ -236,37 +239,42 @@ WebUIEdge::WebUIEdge(
     settings->put_AreDefaultContextMenusEnabled(is_debug ? TRUE : FALSE);
 }
 
+
 auto WebUIEdge::run(std::string_view const index_file) -> void {
-    webview->AddScriptToExecuteOnDocumentCreated(
-        L"let __callbacks = {}; let __callbacks_index = 0;", 
-        nullptr
-    );
-
+    std::wstring js = LR"(
+        class WebUI {
+            constructor() {
+                this.callbacks = {};
+                this.index = 0;
+            }
+    )";
     for(auto const& [name, func] : js_callbacks) {
-        std::wstring js = L"let " + string_utils::to_wstring(name) +
-            LR"( = function() {
-                let index = __callbacks_index ++;
-
-                let promise = new Promise(function(resolve, reject) {
-                        __callbacks[index] = {
+        js += string_utils::to_wstring(name) +
+            LR"((...args) {
+                const index = this.index;
+                let promise = new Promise((resolve, reject) => {
+                        this.callbacks[index] = {
                         resolve: resolve,
                         reject: reject
                     };
                 });
-
                 window.chrome.webview.postMessage(
                     JSON.stringify({
                         index: index,
-                        func: arguments.callee.name,
-                        args: Array.from(arguments)
+                        func: ')" + string_utils::to_wstring(name) + LR"(',
+                        args: Array.from(args)
                     })
                 );
+                this.index ++;
                 return promise;
             })";
-        webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr);
     }
+    js += LR"( 
+        }
+        let webUI = new WebUI();    
+    )";
 
-    std::cout << index_file << std::endl;
+    webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr);
     webview->Navigate(string_utils::to_wstring(index_file).c_str());
 
     auto msg = MSG {};
@@ -292,7 +300,10 @@ auto WebUIEdge::run(std::string_view const index_file) -> void {
             }
         }
     }
+
+    THROW_HRESULT_IF_FAILED(controller->Close());
 }
+
 
 auto WebUIEdge::bind(std::string_view const func_name, bind_func_t&& callback) -> void {
     if(js_callbacks.find(std::string(func_name)) != js_callbacks.end()) {
@@ -310,6 +321,37 @@ auto WebUIEdge::execute_js(std::string_view const js) -> void {
             reinterpret_cast<LPARAM>(
                 new dispatch_func_t([data = string_utils::to_wstring(js), this]() -> HRESULT {
                     return webview->ExecuteScript(data.c_str(), nullptr);
+                })
+            )
+        ) == 0
+    ) {
+        throw std::runtime_error("An error occurred while sending a message to the thread");
+    }
+}
+
+
+auto WebUIEdge::result(uint64_t const index, bool const success, std::string_view const data) -> void {
+    if(success) {
+        std::string js = "webUI.callbacks[" + std::to_string(index) + "].resolve(" + std::string(data) + "); delete webUI.callbacks[" + 
+            std::to_string(index) + "];";
+        execute_js(js);
+    } else {
+        std::string js = "webUI.callbacks[" + std::to_string(index) + "].reject(" + std::string(data) + "); delete webUI.callbacks[" + 
+            std::to_string(index) + "];";
+        execute_js(js);
+    }
+}
+
+
+auto WebUIEdge::quit() -> void {
+    if(::PostThreadMessage(
+            main_thread_id, 
+            WM_APP, 
+            WM_USER, 
+            reinterpret_cast<LPARAM>(
+                new dispatch_func_t([]() -> HRESULT {
+                    ::PostQuitMessage(0);
+                    return S_OK;
                 })
             )
         ) == 0

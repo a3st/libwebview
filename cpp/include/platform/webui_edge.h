@@ -7,7 +7,7 @@
 #include <winrt/base.h>
 #include <webview2/WebView2.h>
 
-using bind_func_t = std::function<void(std::string_view)>;
+using bind_func_t = std::function<void(uint64_t const, std::string_view const)>;
 
 class WebUIEdge {
 public:
@@ -26,6 +26,10 @@ public:
     auto bind(std::string_view const func_name, bind_func_t&& callback) -> void;
 
     auto execute_js(std::string_view const js) -> void;
+
+    auto result(uint64_t const index, bool const success, std::string_view const data) -> void;
+
+    auto quit() -> void;
 
 private:
 
