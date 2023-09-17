@@ -18,6 +18,11 @@ public:
 using WebUIPlatform = WebUI<WebUIEdge>;
 #endif // WEBUI_EDGE
 
+#ifdef WEBUI_CEF
+#include "platform/webui_cef.h"
+using WebUIPlatform = WebUI<WebUICEF>;
+#endif
+
 extern "C" {
 
 typedef void* CWebUI;

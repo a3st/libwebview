@@ -1,6 +1,5 @@
 #include "precompiled.h"
 #include "webui.h"
-#include "platform/webui_edge.h"
 
 CWebUI create_web_ui(
     char const* title, 

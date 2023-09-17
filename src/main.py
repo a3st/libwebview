@@ -12,6 +12,8 @@ app = Application(
 
 @app.on
 def window_close(arg1, arg2, arg3, arg4, arg5, arg6):
-    app.quit()
+    for i in range(0, 100000000):
+        result = i * 1000
+    print("ГЦ")
 
 app.run(index_path="src/index.html")

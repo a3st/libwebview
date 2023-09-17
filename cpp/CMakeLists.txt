@@ -10,6 +10,7 @@ include_directories(
 )
 
 add_library(WebUIEdge SHARED
+    src/thread_queue.cpp
     src/string_utils.cpp
     src/platform/webui_edge.cpp
     src/webui.cpp
@@ -29,8 +30,34 @@ target_link_libraries(WebUIEdge
     WebView2LoaderStatic.lib
 )
 
-target_compile_definitions(WebUIEdge PRIVATE
+target_compile_definitions(WebUIEdge PUBLIC
     WEBUI_EDGE
 )
 
 target_precompile_headers(WebUIEdge PUBLIC "include/precompiled.h")
+
+
+add_library(WebUIWebKit SHARED
+    src/platform/webui_webkit.cpp
+    src/thread_queue.cpp
+    src/string_utils.cpp
+    src/webui.cpp
+)
+
+target_include_directories(WebUIWebKit PRIVATE
+    "${PROJECT_SOURCE_DIR}/thirdparty/json/include"
+)
+
+target_link_directories(WebUIWebKit PRIVATE
+)
+
+target_link_libraries(WebUIWebKit
+    dwmapi.lib
+    libcef.lib
+)
+
+target_compile_definitions(WebUIWebKit PUBLIC
+    WEBUI_WEBKIT
+)
+
+target_precompile_headers(WebUIWebKit PUBLIC "include/precompiled.h")

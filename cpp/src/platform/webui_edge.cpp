@@ -105,7 +105,11 @@ auto WebUIEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMess
     auto found = js_callbacks.find(func_name);
 
     if(found != js_callbacks.end()) {
-        found->second(index, args_data);
+        thread_queue.push_task(
+            [&, found, index, args_data]() -> void {
+                found->second(index, args_data);
+            }
+        );
     }
     
     ::CoTaskMemFree(buffer);

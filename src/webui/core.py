@@ -20,8 +20,6 @@ class Application:
                 self.lib = cdll.LoadLibrary("cpp/build/WebUIEdge.dll")
             case 'cef':
                 self.lib = cdll.LoadLibrary("cpp/build/WebUICEF.dll")
-            case 'webkit':
-                self.lib = cdll.LoadLibrary("cpp/build/WebUIWebkit.dll")
             case 'default':
                 # match platform.platform():
                 #    case 'Windows':

@@ -81,6 +81,9 @@
         "xutility": "cpp",
         "semaphore": "cpp",
         "condition_variable": "cpp",
-        "*.rh": "cpp"
+        "*.rh": "cpp",
+        "queue": "cpp",
+        "codecvt": "cpp",
+        "deque": "cpp"
     }
 }
