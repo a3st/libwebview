@@ -9,6 +9,8 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/include"
 )
 
+if(WIN32)
+
 add_library(WebUIEdge SHARED
     src/thread_queue.cpp
     src/string_utils.cpp
@@ -36,6 +38,9 @@ target_compile_definitions(WebUIEdge PUBLIC
 
 target_precompile_headers(WebUIEdge PUBLIC "include/precompiled.h")
 
+endif()
+
+if(UNIX AND NOT APPLE)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK REQUIRED gtk4)
@@ -70,3 +75,5 @@ target_compile_definitions(WebUIWebKit PUBLIC
 set_target_properties(WebUIWebKit PROPERTIES PREFIX "")
 
 target_precompile_headers(WebUIWebKit PUBLIC "include/precompiled.h")
+
+endif()
