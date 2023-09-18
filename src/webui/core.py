@@ -18,7 +18,7 @@ class Application:
             case 'Windows':
                 self.lib = cdll.LoadLibrary("cpp/build/WebUIEdge.dll")
             case 'Linux':
-                self.lib = cdll.LoadLibrary("cpp/build/WebUIWebKit.so")
+                self.lib = cdll.LoadLibrary("cpp/build/WebUICEF.so")
             case _:
                 raise RuntimeError("Your system is not supported")
 

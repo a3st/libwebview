@@ -43,37 +43,34 @@ endif()
 if(UNIX AND NOT APPLE)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(GTK REQUIRED gtk4)
-pkg_check_modules(GTK REQUIRED webkitgtk-6.0)
+#pkg_check_modules(SDL REQUIRED sdl2)
+pkg_check_modules(GTK REQUIRED gtk+-3.0)
 
-add_library(WebUIWebKit SHARED
-    src/platform/webui_webkit.cpp
+add_library(WebUICEF SHARED
+    src/platform/webui_cef.cpp
     src/thread_queue.cpp
     src/webui.cpp
 )
 
-target_include_directories(WebUIWebKit PRIVATE
+target_include_directories(WebUICEF PRIVATE
     "${PROJECT_SOURCE_DIR}/thirdparty/json/include"
     "${GTK_INCLUDE_DIRS}"
-    "${WEBKITGTK_INCLUDE_DIRS}"
 )
 
-target_link_directories(WebUIWebKit PRIVATE
+target_link_directories(WebUICEF PRIVATE
     "${GTK_LIBRARY_DIRS}"
-    "${WEBKITGTK_LIBRARY_DIRS}"
 )
 
-target_link_libraries(WebUIWebKit
+target_link_libraries(WebUICEF
     "${GTK_LIBRARIES}"
-    "${WEBKITGTK_LIBRARIES}"
 )
 
-target_compile_definitions(WebUIWebKit PUBLIC
-    WEBUI_WEBKIT
+target_compile_definitions(WebUICEF PUBLIC
+    WEBUI_CEF
 )
 
-set_target_properties(WebUIWebKit PROPERTIES PREFIX "")
+set_target_properties(WebUICEF PROPERTIES PREFIX "")
 
-target_precompile_headers(WebUIWebKit PUBLIC "include/precompiled.h")
+target_precompile_headers(WebUICEF PUBLIC "include/precompiled.h")
 
 endif()

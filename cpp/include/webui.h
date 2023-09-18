@@ -18,9 +18,9 @@ public:
 using WebUIPlatform = WebUI<WebUIEdge>;
 #endif // WEBUI_EDGE
 
-#ifdef WEBUI_WEBKIT
-#include "platform/webui_webkit.h"
-using WebUIPlatform = WebUI<WebUIWebKit>;
+#ifdef WEBUI_CEF
+#include "platform/webui_cef.h"
+using WebUIPlatform = WebUI<WebUICEF>;
 #endif
 
 #ifdef WIN32
