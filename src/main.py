@@ -5,8 +5,7 @@ app = Application(
     size=(800, 600), 
     resizeable=True, 
     min_size=(300, 300), 
-    max_size=(900, 700), 
-    backend='edge'
+    max_size=(900, 700)
 )
 
 
@@ -14,6 +13,6 @@ app = Application(
 def window_close(arg1, arg2, arg3, arg4, arg5, arg6):
     for i in range(0, 100000000):
         result = i * 1000
-    print("ГЦ")
+    print("Событие выполнено!")
 
 app.run(index_path="src/index.html")

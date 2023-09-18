@@ -12,21 +12,15 @@ class Application:
         resizeable: bool = False,
         min_size: tuple[int, int] = (-1, -1),
         max_size: tuple[int, int] = (-1, -1),
-        is_debug: bool = True, 
-        backend: str='default',
+        is_debug: bool = True
     ):
-        match backend:
-            case 'edge':
+        match platform.system():
+            case 'Windows':
                 self.lib = cdll.LoadLibrary("cpp/build/WebUIEdge.dll")
-            case 'cef':
-                self.lib = cdll.LoadLibrary("cpp/build/WebUICEF.dll")
-            case 'default':
-                # match platform.platform():
-                #    case 'Windows':
-                #        self.lib
-                pass
+            case 'Linux':
+                self.lib = cdll.LoadLibrary("cpp/build/WebUIWebKit.so")
             case _:
-                pass
+                raise RuntimeError("Your system is not supported")
 
         self.lib.create_web_ui.argtypes = [
             ctypes.c_char_p, 

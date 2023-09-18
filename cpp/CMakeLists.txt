@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2.4)
-project(ElBot VERSION 0.1.5)
+project(WebUI VERSION 0.1.5)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
@@ -37,27 +37,36 @@ target_compile_definitions(WebUIEdge PUBLIC
 target_precompile_headers(WebUIEdge PUBLIC "include/precompiled.h")
 
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK REQUIRED gtk4)
+pkg_check_modules(GTK REQUIRED webkitgtk-6.0)
+
 add_library(WebUIWebKit SHARED
     src/platform/webui_webkit.cpp
     src/thread_queue.cpp
-    src/string_utils.cpp
     src/webui.cpp
 )
 
 target_include_directories(WebUIWebKit PRIVATE
     "${PROJECT_SOURCE_DIR}/thirdparty/json/include"
+    "${GTK_INCLUDE_DIRS}"
+    "${WEBKITGTK_INCLUDE_DIRS}"
 )
 
 target_link_directories(WebUIWebKit PRIVATE
+    "${GTK_LIBRARY_DIRS}"
+    "${WEBKITGTK_LIBRARY_DIRS}"
 )
 
 target_link_libraries(WebUIWebKit
-    dwmapi.lib
-    libcef.lib
+    "${GTK_LIBRARIES}"
+    "${WEBKITGTK_LIBRARIES}"
 )
 
 target_compile_definitions(WebUIWebKit PUBLIC
     WEBUI_WEBKIT
 )
+
+set_target_properties(WebUIWebKit PROPERTIES PREFIX "")
 
 target_precompile_headers(WebUIWebKit PUBLIC "include/precompiled.h")

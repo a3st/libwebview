@@ -84,6 +84,15 @@
         "*.rh": "cpp",
         "queue": "cpp",
         "codecvt": "cpp",
-        "deque": "cpp"
-    }
+        "deque": "cpp",
+        "string_view": "cpp",
+        "*.tcc": "cpp",
+        "cstdarg": "cpp",
+        "cwctype": "cpp",
+        "memory_resource": "cpp",
+        "random": "cpp",
+        "numbers": "cpp",
+        "cinttypes": "cpp"
+    },
+    "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

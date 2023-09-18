@@ -1,13 +1,15 @@
 #pragma once
 
+#include <gtk/gtk.h>
+#include <webkit/webkit.h>
 #include "thread_queue.h"
 
 using bind_func_t = std::function<void(uint64_t const, std::string_view const)>;
 
-class WebUIWebkit {
+class WebUIWebKit {
 public:
 
-    WebUIWebkit(
+    WebUIWebKit(
         std::string_view const title, 
         std::tuple<uint32_t, uint32_t> const size, 
         bool const resizeable,
@@ -15,6 +17,8 @@ public:
         std::tuple<uint32_t, uint32_t> const max_size,
         bool const is_debug
     );
+
+    ~WebUIWebKit();
 
     auto run(std::string_view const index_file) -> void;
 
@@ -27,6 +31,10 @@ public:
     auto quit() -> void;
 
 private:
+    GtkWidget* window;
+    GtkWidget* webview;
+
+    bool running;
 
     std::tuple<uint32_t, uint32_t> min_window_size;
     std::tuple<uint32_t, uint32_t> max_window_size;

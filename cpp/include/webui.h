@@ -18,16 +18,22 @@ public:
 using WebUIPlatform = WebUI<WebUIEdge>;
 #endif // WEBUI_EDGE
 
-#ifdef WEBUI_CEF
-#include "platform/webui_cef.h"
-using WebUIPlatform = WebUI<WebUICEF>;
+#ifdef WEBUI_WEBKIT
+#include "platform/webui_webkit.h"
+using WebUIPlatform = WebUI<WebUIWebKit>;
+#endif
+
+#ifdef WIN32
+#define WEBUI_API __declspec(dllexport)
+#else
+#define WEBUI_API 
 #endif
 
 extern "C" {
 
 typedef void* CWebUI;
 
-__declspec(dllexport) CWebUI create_web_ui(
+WEBUI_API CWebUI create_web_ui(
     char const* title, 
     uint32_t const width, 
     uint32_t const height, 
@@ -39,14 +45,14 @@ __declspec(dllexport) CWebUI create_web_ui(
     bool const is_debug
 );
 
-__declspec(dllexport) void delete_web_ui(CWebUI web_ui);
+WEBUI_API void delete_web_ui(CWebUI web_ui);
 
-__declspec(dllexport) void web_ui_run(CWebUI web_ui, char const* index_file);
+WEBUI_API void web_ui_run(CWebUI web_ui, char const* index_file);
 
-__declspec(dllexport) void web_ui_bind(CWebUI web_ui, char const* func_name, void(*callback)(void*, uint64_t, char const*), void* args);
+WEBUI_API void web_ui_bind(CWebUI web_ui, char const* func_name, void(*callback)(void*, uint64_t, char const*), void* args);
 
-__declspec(dllexport) void web_ui_result(CWebUI web_ui, uint64_t index, bool success, char const* data);
+WEBUI_API void web_ui_result(CWebUI web_ui, uint64_t index, bool success, char const* data);
 
-__declspec(dllexport) void web_ui_quit(CWebUI web_ui);
+WEBUI_API void web_ui_quit(CWebUI web_ui);
 
 }
