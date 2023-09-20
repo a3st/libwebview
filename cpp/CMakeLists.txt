@@ -54,15 +54,20 @@ add_library(WebUICEF SHARED
 
 target_include_directories(WebUICEF PRIVATE
     "${PROJECT_SOURCE_DIR}/thirdparty/json/include"
-    "${GTK_INCLUDE_DIRS}"
+    "${PROJECT_SOURCE_DIR}/thirdparty/cef/include"
+    "${PROJECT_SOURCE_DIR}/thirdparty/cef"
+    ${GTK_INCLUDE_DIRS}
 )
 
 target_link_directories(WebUICEF PRIVATE
-    "${GTK_LIBRARY_DIRS}"
+    ${GTK_LIBRARY_DIRS}
+    "${PROJECT_SOURCE_DIR}/thirdparty/cef/lib/x64"
 )
 
 target_link_libraries(WebUICEF
-    "${GTK_LIBRARIES}"
+    ${GTK_LIBRARIES}
+    libcef.so
+    libcef_dll_wrapper.a
 )
 
 target_compile_definitions(WebUICEF PUBLIC
@@ -72,5 +77,33 @@ target_compile_definitions(WebUICEF PUBLIC
 set_target_properties(WebUICEF PROPERTIES PREFIX "")
 
 target_precompile_headers(WebUICEF PUBLIC "include/precompiled.h")
+
+
+add_executable(WebUICEFTest
+    src/test.cpp
+)
+
+target_include_directories(WebUICEFTest PRIVATE
+    "${PROJECT_SOURCE_DIR}/thirdparty/json/include"
+    "${PROJECT_SOURCE_DIR}/thirdparty/cef/include"
+    "${PROJECT_SOURCE_DIR}/thirdparty/cef"
+    ${GTK_INCLUDE_DIRS}
+)
+
+target_link_directories(WebUICEFTest PRIVATE
+    
+)
+
+target_link_libraries(WebUICEFTest
+    "${PROJECT_SOURCE_DIR}/build/WebUICEF.so"
+)
+
+target_compile_definitions(WebUICEFTest PUBLIC
+    WEBUI_CEF
+)
+
+set_target_properties(WebUICEFTest PROPERTIES PREFIX "")
+
+target_precompile_headers(WebUICEFTest PUBLIC "include/precompiled.h")
 
 endif()

@@ -3,6 +3,8 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
+#include <cef_path_util.h>
+#include <internal/cef_types.h>
 
 WebUICEF::WebUICEF(
     std::string_view const title, 
@@ -14,9 +16,43 @@ WebUICEF::WebUICEF(
 ) :
     min_window_size(min_size), max_window_size(max_size), running(false)
 {
+    std::cout << std::filesystem::current_path().string() + "/log.txt" << std::endl;
+    CefString path;
+    CefGetPath(PK_DIR_MODULE, path);
+    std::cout << path.ToString() << std::endl;
+
+    CefGetPath(PK_DIR_EXE, path);
+    std::cout << path.ToString() << std::endl;
+    {
+        CefMainArgs args(0, NULL);
+        CefSettings settings;
+        CefString(&settings.log_file) = std::filesystem::current_path().string() + "/log.txt";
+        settings.log_severity = cef_log_severity_t::LOGSEVERITY_WARNING;
+        CefString(&settings.resources_dir_path) = std::filesystem::current_path().string() + "/cpp/build";
+        CefString(&settings.framework_dir_path) = std::filesystem::current_path().string() + "/cpp/build";
+        
+        bool result = CefInitialize(args, settings, nullptr, nullptr);
+    }
+
     gtk_init(0, NULL);
 
     window = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));
+
+    gtk_window_set_default_size(window, 800, 600);
+
+    auto window_info = CefWindowInfo {};
+    window_info.SetAsChild(
+        gdk_x11_window_get_xid(gtk_widget_get_window(GTK_WIDGET(window))),
+        CefRect {
+            0, 0, 800, 600
+        }
+    );
+    
+    //client = new WebUIClient();
+
+
+    //auto settings = CefBrowserSettings {};
+    //browser = CefBrowserHost::CreateBrowserSync(window_info, client, CefString("src/index.html"), settings, nullptr);
 }
 
 

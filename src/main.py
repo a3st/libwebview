@@ -1,4 +1,6 @@
 from webui.core import Application
+import sys
+import os
 
 app = Application(
     title="WebUI Template", 
@@ -14,5 +16,6 @@ def window_close(arg1, arg2, arg3, arg4, arg5, arg6):
     for i in range(0, 100000000):
         result = i * 1000
     print("Событие выполнено!")
+
 
 app.run(index_path="src/index.html")
