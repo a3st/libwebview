@@ -4,13 +4,65 @@
 using namespace Microsoft::WRL;
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
-#include "string_utils.h"
 
 using dispatch_func_t = std::function<HRESULT()>;
 
 #define THROW_HRESULT_IF_FAILED(HRESULT) if(FAILED(HRESULT))\
 { throw std::runtime_error(std::format("An error occurred while processing the WINAPI (HRESULT: {:04x})", HRESULT)); }
 
+namespace internal {
+
+auto to_wstring(std::string_view const source) -> std::wstring {
+    int32_t length = ::MultiByteToWideChar(
+        CP_UTF8, 
+        0, 
+        source.data(), 
+        static_cast<int32_t>(source.size()),
+        nullptr,
+        0
+    );
+
+    std::wstring dest(length, '\0');
+
+    ::MultiByteToWideChar(
+        CP_UTF8, 
+        0, 
+        source.data(), 
+        static_cast<int32_t>(source.size()),
+        dest.data(),
+        length
+    );
+    return dest;
+}
+
+auto to_string(std::wstring_view const source) -> std::string {
+    int32_t length = WideCharToMultiByte(
+        CP_UTF8, 
+        0, 
+        source.data(), 
+        static_cast<int32_t>(source.size()), 
+        nullptr, 
+        0, 
+        nullptr, 
+        nullptr
+    );
+    
+    std::string dest(length, '\0');
+
+    WideCharToMultiByte(
+        CP_UTF8, 
+        0, 
+        source.data(), 
+        static_cast<int32_t>(source.size()), 
+        dest.data(), 
+        static_cast<int32_t>(dest.size()), 
+        nullptr, 
+        nullptr
+    );
+    return dest;                                 
+}
+
+}
 
 auto WebUIEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT {
     auto window = reinterpret_cast<WebUIEdge*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
@@ -97,7 +149,7 @@ auto WebUIEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMess
     LPWSTR buffer;
     args->TryGetWebMessageAsString(&buffer);
 
-    auto message_data = json::parse(string_utils::to_string(buffer));
+    auto message_data = json::parse(internal::to_string(buffer));
     auto index = message_data["index"].get<uint64_t>();
     auto func_name = message_data["func"].get<std::string>();
     auto args_data = message_data["args"].dump();
@@ -131,18 +183,18 @@ WebUIEdge::WebUIEdge(
 {
     THROW_HRESULT_IF_FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
 
-    auto wnd_class = WNDCLASS {
+    auto wnd_class = WNDCLASSEX {
+        .cbSize = sizeof(WNDCLASSEX),
         .lpfnWndProc = window_proc,
         .hInstance = ::GetModuleHandle(nullptr),
-        //.hIcon = static_cast<HICON>(::LoadImage(nullptr, "resources/win32/icon_150x150.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED)),
         .lpszClassName = "WebUI"
     };
 
-    if(!::RegisterClass(&wnd_class)) {
+    if(!::RegisterClassEx(&wnd_class)) {
         throw std::runtime_error("Failed to register window class");
     }
 
-    uint32_t style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+    uint32_t style = WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX; 
 
     if(resizeable) {
         style |= WS_THICKFRAME;
@@ -152,9 +204,10 @@ WebUIEdge::WebUIEdge(
         style |= WS_MAXIMIZEBOX;
     }
 
-    window = ::CreateWindow(
+    window = ::CreateWindowEx(
+        WS_EX_DLGMODALFRAME,
         wnd_class.lpszClassName,
-        title.data(),
+        std::string(title).c_str(),
         style,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
@@ -253,7 +306,7 @@ auto WebUIEdge::run(std::string_view const index_file) -> void {
             }
     )";
     for(auto const& [name, func] : js_callbacks) {
-        js += string_utils::to_wstring(name) +
+        js += internal::to_wstring(name) +
             LR"((...args) {
                 const index = this.index;
                 let promise = new Promise((resolve, reject) => {
@@ -265,7 +318,7 @@ auto WebUIEdge::run(std::string_view const index_file) -> void {
                 window.chrome.webview.postMessage(
                     JSON.stringify({
                         index: index,
-                        func: ')" + string_utils::to_wstring(name) + LR"(',
+                        func: ')" + internal::to_wstring(name) + LR"(',
                         args: Array.from(args)
                     })
                 );
@@ -279,7 +332,7 @@ auto WebUIEdge::run(std::string_view const index_file) -> void {
     )";
 
     webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr);
-    webview->Navigate(string_utils::to_wstring(index_file).c_str());
+    webview->Navigate(internal::to_wstring(index_file).c_str());
 
     auto msg = MSG {};
     bool running = true;
@@ -323,7 +376,7 @@ auto WebUIEdge::execute_js(std::string_view const js) -> void {
             WM_APP, 
             WM_USER, 
             reinterpret_cast<LPARAM>(
-                new dispatch_func_t([data = string_utils::to_wstring(js), this]() -> HRESULT {
+                new dispatch_func_t([data = internal::to_wstring(js), this]() -> HRESULT {
                     return webview->ExecuteScript(data.c_str(), nullptr);
                 })
             )

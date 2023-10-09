@@ -13,7 +13,6 @@ if(WIN32)
 
 add_library(WebUIEdge SHARED
     src/thread_queue.cpp
-    src/string_utils.cpp
     src/platform/webui_edge.cpp
     src/webui.cpp
 )
