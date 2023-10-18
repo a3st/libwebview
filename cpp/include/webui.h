@@ -4,24 +4,18 @@ template<typename Backend>
 class WebUI : public Backend {
 public:
     WebUI(
+        std::string_view const app_name,
         std::string_view const title, 
         std::tuple<uint32_t, uint32_t> const size, 
         bool const resizeable,
-        std::tuple<uint32_t, uint32_t> const min_size,
-        std::tuple<uint32_t, uint32_t> const max_size,
         bool const is_debug
-    ) : Backend(title, size, resizeable, min_size, max_size, is_debug) { }
+    ) : Backend(app_name, title, size, resizeable, is_debug) { }
 };
 
 #ifdef WEBUI_EDGE
 #include "platform/webui_edge.h"
 using WebUIPlatform = WebUI<WebUIEdge>;
 #endif // WEBUI_EDGE
-
-#ifdef WEBUI_CEF
-#include "platform/webui_cef.h"
-using WebUIPlatform = WebUI<WebUICEF>;
-#endif
 
 #ifdef WIN32
 #define WEBUI_API __declspec(dllexport)
@@ -34,14 +28,11 @@ extern "C" {
 typedef void* CWebUI;
 
 WEBUI_API CWebUI create_web_ui(
+    char const* app_name,
     char const* title, 
     uint32_t const width, 
     uint32_t const height, 
     bool const resizeable,
-    uint32_t const min_width,
-    uint32_t const min_height,
-    uint32_t const max_width,
-    uint32_t const max_height,
     bool const is_debug
 );
 
@@ -54,5 +45,11 @@ WEBUI_API void web_ui_bind(CWebUI web_ui, char const* func_name, void(*callback)
 WEBUI_API void web_ui_result(CWebUI web_ui, uint64_t index, bool success, char const* data);
 
 WEBUI_API void web_ui_quit(CWebUI web_ui);
+
+WEBUI_API void web_ui_set_max_size(CWebUI web_ui, uint32_t const width, uint32_t const height);
+
+WEBUI_API void web_ui_set_min_size(CWebUI web_ui, uint32_t const width, uint32_t const height);
+
+WEBUI_API void web_ui_execute_js(CWebUI web_ui, char const* js);
 
 }

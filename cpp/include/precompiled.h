@@ -5,7 +5,6 @@
 #include <thread>
 #include <functional>
 #include <tuple>
-#include <atomic>
 #include <ranges>
 #include <format>
 #include <map>

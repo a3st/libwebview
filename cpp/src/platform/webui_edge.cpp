@@ -91,7 +91,7 @@ auto WebUIEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -
                 );
                 window_pos->cy = std::clamp(
                     static_cast<uint32_t>(window_pos->cy), 
-                    1u, 
+                    1u,
                     std::get<1>(window->max_window_size)
                 );
             } else if(window->min_window_size != std::make_tuple<uint32_t, uint32_t>(-1, -1) && 
@@ -106,6 +106,8 @@ auto WebUIEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -
                     std::get<1>(window->min_window_size), 
                     std::numeric_limits<uint32_t>::max()
                 );
+            } else if(window->min_window_size == std::make_tuple<uint32_t, uint32_t>(-1, -1) && 
+                window->max_window_size == std::make_tuple<uint32_t, uint32_t>(-1, -1)) {
             } else {
                 window_pos->cx = std::clamp(
                     static_cast<uint32_t>(window_pos->cx), 
@@ -126,7 +128,6 @@ auto WebUIEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -
     return 0;
 }
 
-
 auto WebUIEdge::navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT {
     if(!is_initialized) {
         is_initialized = true;
@@ -143,7 +144,6 @@ auto WebUIEdge::navigation_completed(ICoreWebView2* sender, ICoreWebView2Navigat
     }
     return S_OK;
 }
-
 
 auto WebUIEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
     LPWSTR buffer;
@@ -168,18 +168,16 @@ auto WebUIEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMess
     return S_OK;
 }
 
-
 WebUIEdge::WebUIEdge(
+    std::string_view const app_name,
     std::string_view const title, 
     std::tuple<uint32_t, uint32_t> const size, 
     bool const resizeable,
-    std::tuple<uint32_t, uint32_t> const min_size,
-    std::tuple<uint32_t, uint32_t> const max_size, 
     bool const is_debug
 ) :
-    is_initialized(false), semaphore(0), 
+    is_initialized(false), semaphore(0),
     main_thread_id(::GetCurrentThreadId()),
-    min_window_size(min_size), max_window_size(max_size) 
+    min_window_size(-1, -1), max_window_size(-1, -1)
 {
     THROW_HRESULT_IF_FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
 
@@ -194,14 +192,10 @@ WebUIEdge::WebUIEdge(
         throw std::runtime_error("Failed to register window class");
     }
 
-    uint32_t style = WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX; 
+    uint32_t style = WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
 
     if(resizeable) {
         style |= WS_THICKFRAME;
-    }
-
-    if(max_size == std::make_tuple<uint32_t, uint32_t>(-1, -1)) {
-        style |= WS_MAXIMIZEBOX;
     }
 
     window = ::CreateWindowEx(
@@ -237,11 +231,11 @@ WebUIEdge::WebUIEdge(
 
     ::CoTaskMemFree(version);
 
-    // std::wstring user_data_path = user_data.wstring() + wstring_convert(app_name);
+    std::filesystem::path const app_data = std::getenv("APPDATA");
 
     THROW_HRESULT_IF_FAILED(::CreateCoreWebView2EnvironmentWithOptions(
         nullptr, 
-        L"C:/Users/dima7/AppData/Roaming/test_app",
+        (app_data / app_name).wstring().c_str(),
         nullptr, 
         Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
             [&, this](HRESULT error_code, ICoreWebView2Environment* created_environment) -> HRESULT {
@@ -296,13 +290,34 @@ WebUIEdge::WebUIEdge(
     settings->put_AreDefaultContextMenusEnabled(is_debug ? TRUE : FALSE);
 }
 
+auto WebUIEdge::set_max_size(std::tuple<uint32_t, uint32_t> const size) -> void {
+    if(size == std::make_tuple<uint32_t, uint32_t>(-1, -1)) {
+        uint32_t style = ::GetWindowLong(window, GWL_STYLE);
+        if(!(style & WS_MAXIMIZEBOX)) {
+            style |= WS_MAXIMIZEBOX;
+            ::SetWindowLong(window, GWL_STYLE, style);
+        }
+    } else {
+        uint32_t style = ::GetWindowLong(window, GWL_STYLE);
+        if(style & WS_MAXIMIZEBOX) {
+            style &= ~WS_MAXIMIZEBOX;
+            ::SetWindowLong(window, GWL_STYLE, style);
+        }
+    }
+    max_window_size = size;
+}
 
-auto WebUIEdge::run(std::string_view const index_file) -> void {
+auto WebUIEdge::set_min_size(std::tuple<uint32_t, uint32_t> const size) -> void {
+    min_window_size = size;
+}
+
+auto WebUIEdge::run(std::string_view const file_path) -> void {
     std::wstring js = LR"(
         class WebUI {
             constructor() {
                 this.callbacks = {};
                 this.index = 0;
+                this.virtualLocation = "/";
             }
     )";
     for(auto const& [name, func] : js_callbacks) {
@@ -332,7 +347,7 @@ auto WebUIEdge::run(std::string_view const index_file) -> void {
     )";
 
     webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr);
-    webview->Navigate(internal::to_wstring(index_file).c_str());
+    webview->Navigate(internal::to_wstring(file_path).c_str());
 
     auto msg = MSG {};
     bool running = true;
@@ -361,14 +376,12 @@ auto WebUIEdge::run(std::string_view const index_file) -> void {
     THROW_HRESULT_IF_FAILED(controller->Close());
 }
 
-
 auto WebUIEdge::bind(std::string_view const func_name, bind_func_t&& callback) -> void {
     if(js_callbacks.find(std::string(func_name)) != js_callbacks.end()) {
         throw std::runtime_error("Cannot to bind a function that already exists");
     }
     js_callbacks.insert({ std::string(func_name), std::move(callback) });
 }
-
 
 auto WebUIEdge::execute_js(std::string_view const js) -> void {
     if(::PostThreadMessage(
@@ -386,7 +399,6 @@ auto WebUIEdge::execute_js(std::string_view const js) -> void {
     }
 }
 
-
 auto WebUIEdge::result(uint64_t const index, bool const success, std::string_view const data) -> void {
     if(success) {
         std::string js = "webUI.callbacks[" + std::to_string(index) + "].resolve(" + std::string(data) + "); delete webUI.callbacks[" + 
@@ -398,7 +410,6 @@ auto WebUIEdge::result(uint64_t const index, bool const success, std::string_vie
         execute_js(js);
     }
 }
-
 
 auto WebUIEdge::quit() -> void {
     if(::PostThreadMessage(

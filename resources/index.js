@@ -1,5 +1,6 @@
 
 function test() {
+    console.log("123")
     webUI.window_close([ 1, 2, 3, 4, 5, { 'test': 2 } ]).then(
         (result) => {
             console.log(result)
