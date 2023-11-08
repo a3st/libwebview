@@ -5,8 +5,6 @@ using namespace Microsoft::WRL;
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-using dispatch_func_t = std::function<HRESULT()>;
-
 #define THROW_HRESULT_IF_FAILED(HRESULT) if(FAILED(HRESULT))\
 { throw std::runtime_error(std::format("An error occurred while processing the WINAPI (HRESULT: {:04x})", HRESULT)); }
 
@@ -396,11 +394,11 @@ auto AboveEdge::run(std::string_view const file_path) -> void {
                 case WM_QUIT: {
                     running = false;
                 } break;
-                case WM_APP: {
+                /*case WM_APP: {
                     auto func = reinterpret_cast<dispatch_func_t*>(msg.lParam);
                     THROW_HRESULT_IF_FAILED((*func)());
                     delete func;
-                } break;
+                } break;*/
                 default: {
                     if(msg.hwnd) {
                         ::TranslateMessage(&msg);
@@ -408,6 +406,10 @@ auto AboveEdge::run(std::string_view const file_path) -> void {
                     }
                 } break;
             }
+        }
+
+        while(!main_queue.empty()) {
+            THROW_HRESULT_IF_FAILED(main_queue.pop_front()());
         }
     }
 
@@ -422,7 +424,12 @@ auto AboveEdge::bind(std::string_view const func_name, bind_func_t&& callback) -
 }
 
 auto AboveEdge::execute_js(std::string_view const js) -> void {
-    if(::PostThreadMessage(
+    main_queue.push(
+        [data = internal::to_wstring(js), this]() -> HRESULT {
+            return webview->ExecuteScript(data.c_str(), nullptr);
+        }
+    );
+    /*if(::PostThreadMessage(
             main_thread_id, 
             WM_APP, 
             WM_USER, 
@@ -434,7 +441,7 @@ auto AboveEdge::execute_js(std::string_view const js) -> void {
         ) == 0
     ) {
         throw std::runtime_error("An error occurred while sending a message to the thread");
-    }
+    }*/
 }
 
 auto AboveEdge::result(uint64_t const index, bool const success, std::string_view const data) -> void {
@@ -448,7 +455,13 @@ auto AboveEdge::result(uint64_t const index, bool const success, std::string_vie
 }
 
 auto AboveEdge::quit() -> void {
-    if(::PostThreadMessage(
+    main_queue.push(
+        []() -> HRESULT {
+            ::PostQuitMessage(0);
+            return S_OK;
+        }
+    );
+    /*if(::PostThreadMessage(
             main_thread_id, 
             WM_APP, 
             WM_USER, 
@@ -461,7 +474,7 @@ auto AboveEdge::quit() -> void {
         ) == 0
     ) {
         throw std::runtime_error("An error occurred while sending a message to the thread");
-    }
+    }*/
 }
 
 auto AboveEdge::emit(std::string_view const event, std::string_view const data) -> void {

@@ -7,8 +7,10 @@
 #include <winrt/base.h>
 #include <webview2/WebView2.h>
 #include "thread_queue.h"
+#include "mutex_queue.h"
 
 using bind_func_t = std::function<void(uint64_t const, std::string_view const)>;
+using dispatch_func_t = std::function<HRESULT()>;
 
 class AboveEdge {
 public:
@@ -54,6 +56,7 @@ private:
     DWORD main_thread_id;
     std::binary_semaphore semaphore;
     ThreadQueue thread_queue;
+    MutexQueue<dispatch_func_t> main_queue;
 
     std::map<std::string, bind_func_t> callbacks;
 

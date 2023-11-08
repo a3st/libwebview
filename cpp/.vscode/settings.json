@@ -92,7 +92,8 @@
         "memory_resource": "cpp",
         "random": "cpp",
         "numbers": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "types.h": "c"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }
