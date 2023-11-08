@@ -1,5 +1,5 @@
 #include "precompiled.h"
-#include "platform/webui_edge.h"
+#include "platform/above_edge.h"
 #include <wrl/event.h>
 using namespace Microsoft::WRL;
 #include <nlohmann/json.hpp>
@@ -64,8 +64,13 @@ auto to_string(std::wstring_view const source) -> std::string {
 
 }
 
-auto WebUIEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT {
-    auto window = reinterpret_cast<WebUIEdge*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
+auto AboveEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT {
+    auto window = reinterpret_cast<AboveEdge*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
+
+    if(!window) {
+        return ::DefWindowProc(hwnd, msg, wparam, lparam);
+    }
+    
     switch(msg) {
         case WM_DESTROY: {
             ::PostQuitMessage(0);
@@ -79,47 +84,16 @@ auto WebUIEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -
             ::GetClientRect(window->window, &rect);
             window->controller->put_Bounds(rect);
         } break;
-        case WM_WINDOWPOSCHANGING: {
-            auto window_pos = reinterpret_cast<LPWINDOWPOS>(lparam);
-            
-            if(window->min_window_size == std::make_tuple<uint32_t, uint32_t>(-1, -1) && 
-                window->max_window_size != std::make_tuple<uint32_t, uint32_t>(-1, -1)) {
-                window_pos->cx = std::clamp(
-                    static_cast<uint32_t>(window_pos->cx), 
-                    1u, 
-                    std::get<0>(window->max_window_size)
-                );
-                window_pos->cy = std::clamp(
-                    static_cast<uint32_t>(window_pos->cy), 
-                    1u,
-                    std::get<1>(window->max_window_size)
-                );
-            } else if(window->min_window_size != std::make_tuple<uint32_t, uint32_t>(-1, -1) && 
-                window->max_window_size == std::make_tuple<uint32_t, uint32_t>(-1, -1)) {
-                window_pos->cx = std::clamp(
-                    static_cast<uint32_t>(window_pos->cx), 
-                    std::get<0>(window->min_window_size), 
-                    std::numeric_limits<uint32_t>::max()
-                );
-                window_pos->cy = std::clamp(
-                    static_cast<uint32_t>(window_pos->cy), 
-                    std::get<1>(window->min_window_size), 
-                    std::numeric_limits<uint32_t>::max()
-                );
-            } else if(window->min_window_size == std::make_tuple<uint32_t, uint32_t>(-1, -1) && 
-                window->max_window_size == std::make_tuple<uint32_t, uint32_t>(-1, -1)) {
-            } else {
-                window_pos->cx = std::clamp(
-                    static_cast<uint32_t>(window_pos->cx), 
-                    std::get<0>(window->min_window_size), 
-                    std::get<0>(window->max_window_size)
-                );
-                window_pos->cy = std::clamp(
-                    static_cast<uint32_t>(window_pos->cy), 
-                    std::get<1>(window->min_window_size), 
-                    std::get<1>(window->max_window_size)
-                );
+        case WM_GETMINMAXINFO: {
+            MINMAXINFO* mmi = (MINMAXINFO*)lparam;
+            mmi->ptMinTrackSize.x = std::get<0>(window->min_window_size);
+            mmi->ptMinTrackSize.y = std::get<1>(window->min_window_size);
+
+            if(window->max_window_size != std::make_tuple(0u, 0u)) {
+                mmi->ptMaxTrackSize.x = std::get<0>(window->max_window_size);
+                mmi->ptMaxTrackSize.y = std::get<1>(window->max_window_size);
             }
+            return 0;
         } break;
         default: {
             return ::DefWindowProc(hwnd, msg, wparam, lparam);
@@ -128,7 +102,7 @@ auto WebUIEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -
     return 0;
 }
 
-auto WebUIEdge::navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT {
+auto AboveEdge::navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT {
     if(!is_initialized) {
         is_initialized = true;
 
@@ -145,7 +119,7 @@ auto WebUIEdge::navigation_completed(ICoreWebView2* sender, ICoreWebView2Navigat
     return S_OK;
 }
 
-auto WebUIEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
+auto AboveEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
     LPWSTR buffer;
     args->TryGetWebMessageAsString(&buffer);
 
@@ -154,9 +128,8 @@ auto WebUIEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMess
     auto func_name = message_data["func"].get<std::string>();
     auto args_data = message_data["args"].dump();
 
-    auto found = js_callbacks.find(func_name);
-
-    if(found != js_callbacks.end()) {
+    auto found = callbacks.find(func_name);
+    if(found != callbacks.end()) {
         thread_queue.push_task(
             [&, found, index, args_data]() -> void {
                 found->second(index, args_data);
@@ -168,7 +141,7 @@ auto WebUIEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMess
     return S_OK;
 }
 
-WebUIEdge::WebUIEdge(
+AboveEdge::AboveEdge(
     std::string_view const app_name,
     std::string_view const title, 
     std::tuple<uint32_t, uint32_t> const size, 
@@ -177,7 +150,7 @@ WebUIEdge::WebUIEdge(
 ) :
     is_initialized(false), semaphore(0),
     main_thread_id(::GetCurrentThreadId()),
-    min_window_size(-1, -1), max_window_size(-1, -1)
+    min_window_size(1, 1), max_window_size(0, 0)
 {
     THROW_HRESULT_IF_FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
 
@@ -185,7 +158,7 @@ WebUIEdge::WebUIEdge(
         .cbSize = sizeof(WNDCLASSEX),
         .lpfnWndProc = window_proc,
         .hInstance = ::GetModuleHandle(nullptr),
-        .lpszClassName = "WebUI"
+        .lpszClassName = "Above"
     };
 
     if(!::RegisterClassEx(&wnd_class)) {
@@ -274,12 +247,12 @@ WebUIEdge::WebUIEdge(
     THROW_HRESULT_IF_FAILED(controller->get_CoreWebView2(webview.put()));
 
     webview->add_NavigationCompleted(
-        Callback<ICoreWebView2NavigationCompletedEventHandler>(this, &WebUIEdge::navigation_completed).Get(), 
+        Callback<ICoreWebView2NavigationCompletedEventHandler>(this, &AboveEdge::navigation_completed).Get(), 
         &token
     );
 
     webview->add_WebMessageReceived(
-        Callback<ICoreWebView2WebMessageReceivedEventHandler>(this, &WebUIEdge::web_message_received).Get(), 
+        Callback<ICoreWebView2WebMessageReceivedEventHandler>(this, &AboveEdge::web_message_received).Get(), 
         &token
     );
 
@@ -290,8 +263,8 @@ WebUIEdge::WebUIEdge(
     settings->put_AreDefaultContextMenusEnabled(is_debug ? TRUE : FALSE);
 }
 
-auto WebUIEdge::set_max_size(std::tuple<uint32_t, uint32_t> const size) -> void {
-    if(size == std::make_tuple<uint32_t, uint32_t>(-1, -1)) {
+auto AboveEdge::set_max_size(std::tuple<uint32_t, uint32_t> const size) -> void {
+    if(size == std::make_tuple<uint32_t, uint32_t>(0, 0)) {
         uint32_t style = ::GetWindowLong(window, GWL_STYLE);
         if(!(style & WS_MAXIMIZEBOX)) {
             style |= WS_MAXIMIZEBOX;
@@ -307,29 +280,95 @@ auto WebUIEdge::set_max_size(std::tuple<uint32_t, uint32_t> const size) -> void 
     max_window_size = size;
 }
 
-auto WebUIEdge::set_min_size(std::tuple<uint32_t, uint32_t> const size) -> void {
+auto AboveEdge::set_min_size(std::tuple<uint32_t, uint32_t> const size) -> void {
     min_window_size = size;
 }
 
-auto WebUIEdge::run(std::string_view const file_path) -> void {
+auto AboveEdge::set_size(std::tuple<uint32_t, uint32_t> const size) -> void {
+    ::SetWindowPos(window, nullptr, CW_USEDEFAULT, CW_USEDEFAULT, std::get<0>(size), std::get<1>(size), SWP_NOMOVE);
+}
+
+auto AboveEdge::run(std::string_view const file_path) -> void {
     std::wstring js = LR"(
-        class WebUI {
+        class Queue {
             constructor() {
-                this.callbacks = {};
-                this.index = 0;
-                this.virtualLocation = "/";
+                this.elements = {};
+                this.head = 0;
+                this.tail = 0;
+            }
+
+            enqueue(element) {
+                this.elements[this.tail] = element;
+                this.tail++;
+            }
+
+            dequeue() {
+                const item = this.elements[this.head];
+                delete this.elements[this.head];
+                this.head++;
+                return item;
+            }
+
+            peek() {
+                return this.elements[this.head];
+            }
+
+            length() {
+                return this.tail - this.head;
+            }
+
+            isEmpty() {
+                return this.length == 0;
+            }
+        }
+
+        class IndexAllocator {
+            constructor(count) {
+                this.queue = new Queue();
+
+                for(let i = 0; i < count; i++) {
+                    this.queue.enqueue(i);
+                }
+            }
+
+            allocate() {
+                return this.queue.dequeue();
+            }
+
+            deallocate(element) {
+                this.queue.enqueue(element);
+            }
+        }
+
+        class Above {
+            static MAX_RESULTS = 100;
+
+            constructor() {
+                this.results = {};
+                this.events = {};
+                this.allocator = new IndexAllocator(Above.MAX_RESULTS);
+            }
+
+            __free_result(index) {
+                this.allocator.deallocate(index);
+            }
+
+            event(event, func) {
+                this.events[event] = func;
             }
     )";
-    for(auto const& [name, func] : js_callbacks) {
+    for(auto const& [name, func] : callbacks) {
         js += internal::to_wstring(name) +
             LR"((...args) {
-                const index = this.index;
+                const index = this.allocator.allocate();
+
                 let promise = new Promise((resolve, reject) => {
-                        this.callbacks[index] = {
+                        this.results[index] = {
                         resolve: resolve,
                         reject: reject
                     };
                 });
+
                 window.chrome.webview.postMessage(
                     JSON.stringify({
                         index: index,
@@ -337,13 +376,12 @@ auto WebUIEdge::run(std::string_view const file_path) -> void {
                         args: Array.from(args)
                     })
                 );
-                this.index ++;
                 return promise;
             })";
     }
     js += LR"( 
         }
-        let webUI = new WebUI();    
+        let ABOVE = new Above();
     )";
 
     webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr);
@@ -376,14 +414,14 @@ auto WebUIEdge::run(std::string_view const file_path) -> void {
     THROW_HRESULT_IF_FAILED(controller->Close());
 }
 
-auto WebUIEdge::bind(std::string_view const func_name, bind_func_t&& callback) -> void {
-    if(js_callbacks.find(std::string(func_name)) != js_callbacks.end()) {
+auto AboveEdge::bind(std::string_view const func_name, bind_func_t&& callback) -> void {
+    if(callbacks.find(std::string(func_name)) != callbacks.end()) {
         throw std::runtime_error("Cannot to bind a function that already exists");
     }
-    js_callbacks.insert({ std::string(func_name), std::move(callback) });
+    callbacks.insert({ std::string(func_name), std::move(callback) });
 }
 
-auto WebUIEdge::execute_js(std::string_view const js) -> void {
+auto AboveEdge::execute_js(std::string_view const js) -> void {
     if(::PostThreadMessage(
             main_thread_id, 
             WM_APP, 
@@ -399,19 +437,17 @@ auto WebUIEdge::execute_js(std::string_view const js) -> void {
     }
 }
 
-auto WebUIEdge::result(uint64_t const index, bool const success, std::string_view const data) -> void {
+auto AboveEdge::result(uint64_t const index, bool const success, std::string_view const data) -> void {
+    std::string js;
     if(success) {
-        std::string js = "webUI.callbacks[" + std::to_string(index) + "].resolve(" + std::string(data) + "); delete webUI.callbacks[" + 
-            std::to_string(index) + "];";
-        execute_js(js);
+        js = std::format("ABOVE.results[{0}].resolve({1}); ABOVE.__free_result({0});", index, data);
     } else {
-        std::string js = "webUI.callbacks[" + std::to_string(index) + "].reject(" + std::string(data) + "); delete webUI.callbacks[" + 
-            std::to_string(index) + "];";
-        execute_js(js);
+        js = std::format("ABOVE.results[{0}].reject({1}); ABOVE.__free_result({0});", index, data);
     }
+    execute_js(js);
 }
 
-auto WebUIEdge::quit() -> void {
+auto AboveEdge::quit() -> void {
     if(::PostThreadMessage(
             main_thread_id, 
             WM_APP, 
@@ -426,4 +462,14 @@ auto WebUIEdge::quit() -> void {
     ) {
         throw std::runtime_error("An error occurred while sending a message to the thread");
     }
+}
+
+auto AboveEdge::emit(std::string_view const event, std::string_view const data) -> void {
+    std::string const js =
+        R"(
+            if(')" + std::string(event) + R"(' in ABOVE.events) {
+                ABOVE.events[')" + std::string(event) + R"(']()" + std::string(data) + R"()
+            }
+        )";
+    execute_js(js);
 }

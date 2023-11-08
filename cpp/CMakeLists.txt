@@ -1,38 +1,38 @@
 cmake_minimum_required(VERSION 3.25.3)
-project(WebUI VERSION 1.0.0)
+project(Above VERSION 1.0.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 
 if(WIN32)
 
-add_library(WebUIEdge SHARED
+add_library(AboveEdge SHARED
     "src/thread_queue.cpp"
-    "src/platform/webui_edge.cpp"
-    "src/webui.cpp"
+    "src/platform/above_edge.cpp"
+    "src/above.cpp"
 )
 
-target_include_directories(WebUIEdge PRIVATE
+target_include_directories(AboveEdge PRIVATE
     "${PROJECT_SOURCE_DIR}/src"
     "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/thirdparty/json/include"
     "${PROJECT_SOURCE_DIR}/thirdparty/webview2/include"
 )
 
-target_link_directories(WebUIEdge PRIVATE
+target_link_directories(AboveEdge PRIVATE
     "${PROJECT_SOURCE_DIR}/thirdparty/webview2/lib/x86_64"
 )
 
-target_link_libraries(WebUIEdge
+target_link_libraries(AboveEdge
     dwmapi.lib
     WebView2LoaderStatic.lib
 )
 
-target_compile_definitions(WebUIEdge PRIVATE
-    WEBUI_EDGE
+target_compile_definitions(AboveEdge PRIVATE
+    ABOVE_EDGE
 )
 
-target_precompile_headers(WebUIEdge PRIVATE "include/precompiled.h")
+target_precompile_headers(AboveEdge PRIVATE "include/precompiled.h")
 
 endif()
 

@@ -10,10 +10,10 @@
 
 using bind_func_t = std::function<void(uint64_t const, std::string_view const)>;
 
-class WebUIEdge {
+class AboveEdge {
 public:
 
-    WebUIEdge(
+    AboveEdge(
         std::string_view const app_name,
         std::string_view const title, 
         std::tuple<uint32_t, uint32_t> const size, 
@@ -25,6 +25,8 @@ public:
 
     auto set_min_size(std::tuple<uint32_t, uint32_t> const size) -> void;
 
+    auto set_size(std::tuple<uint32_t, uint32_t> const size) -> void;
+
     auto run(std::string_view const file_path) -> void;
 
     auto bind(std::string_view const func_name, bind_func_t&& callback) -> void;
@@ -34,6 +36,8 @@ public:
     auto result(uint64_t const index, bool const success, std::string_view const data) -> void;
 
     auto quit() -> void;
+
+    auto emit(std::string_view const event, std::string_view const data) -> void;
 
 private:
 
@@ -51,7 +55,7 @@ private:
     std::binary_semaphore semaphore;
     ThreadQueue thread_queue;
 
-    std::map<std::string, bind_func_t> js_callbacks;
+    std::map<std::string, bind_func_t> callbacks;
 
     static auto window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT;
 

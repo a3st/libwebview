@@ -1,8 +1,8 @@
 import json
 import os
-from .wrapper import WebUILib
+from .wrapper import AboveLib
 
-lib = WebUILib()
+lib = AboveLib()
 
 class App:
     def __init__(
@@ -13,11 +13,11 @@ class App:
         resizeable: bool = False,
         is_debug: bool = True
     ):
-        self.js_callbacks = []
+        self.callbacks = []
 
         width, height = size
 
-        self.web_ui = lib.create_web_ui(
+        self.instance = lib.above_create_app(
             app_name.encode(),
             title.encode(),
             width, height,
@@ -27,26 +27,32 @@ class App:
 
     
     def __del__(self):
-        lib.delete_web_ui(self.web_ui)
+        lib.above_delete_app(self.instance)
 
 
     def set_max_size(self, size: tuple[int, int]):
         width, height = size
-        lib.web_ui_set_max_size(self.web_ui, width, height)
+        lib.above_set_max_size_app(self.instance, width, height)
 
     
     def set_min_size(self, size: tuple[int, int]):
         width, height = size
-        lib.web_ui_set_min_size(self.web_ui, width, height)
+        lib.above_set_min_size_app(self.instance, width, height)
 
 
     def quit(self):
-        lib.web_ui_quit(self.web_ui)
+        lib.above_quit_app(self.instance)
 
 
-    def on(self, func):
+    def emit(self, event, args):
+        data = json.dumps(args)
+        lib.above_emit(self.instance, event.encode(), data.encode())
+
+
+    def route(self, func):
         def wrapper(ctx, index, args):
             data = json.loads(args)
+
             try:
                 if len(data) == 0:
                     ret = func()
@@ -54,27 +60,24 @@ class App:
                     ret = func(*data[0])
                 if ret is not None:
                     data = json.dumps(ret)
-                    lib.web_ui_result(self.web_ui, index, True, data.encode())
+                    lib.above_result(self.instance, index, True, data.encode())
                 else:
-                    lib.web_ui_result(self.web_ui, index, True, "{}".encode())
+                    lib.above_result(self.instance, index, True, "{}".encode())
+
             except Exception as e:
                 data = json.dumps({ "error" : str(e) })
-                lib.web_ui_result(self.web_ui, index, False, data.encode())
+                lib.above_result(self.instance, index, False, data.encode())
 
-        self.js_callbacks.append(WebUILib.BIND_FUNC_T(lambda ctx, index, args: wrapper(ctx, index, args)))
+        self.callbacks.append(AboveLib.BIND_FUNC_T(lambda ctx, index, args: wrapper(ctx, index, args)))
         
-        lib.web_ui_bind(
-            self.web_ui,
+        lib.above_bind(
+            self.instance,
             func.__name__.encode(),
-            self.js_callbacks[-1],
+            self.callbacks[-1],
             None
         )
         return wrapper
 
 
     def run(self, file_path: str):
-        lib.web_ui_run(self.web_ui, ("file:///" + os.getcwd() + "/" + file_path).encode())
-
-
-    def execute_js(self, js: str):
-        lib.web_ui_execute_js(self.web_ui, js.encode())
+        lib.above_run_app(self.instance, ("file:///" + os.getcwd() + "/" + file_path).encode())

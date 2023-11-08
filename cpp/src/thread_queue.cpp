@@ -1,3 +1,5 @@
+// Copyright © 2022-2023 Dmitriy Lukovenko. All rights reserved.
+
 #include "precompiled.h"
 #include "thread_queue.h"
 

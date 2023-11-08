@@ -1,7 +1,7 @@
 import os
 os.add_dll_directory(os.path.join(os.getcwd(), "cpp", "build"))
 
-from webui import App
+from above import App
 
 app = App(
     app_name="test_app_python",
@@ -10,9 +10,13 @@ app = App(
     resizeable=True
 )
 
+app.set_max_size((0, 0))
+app.set_min_size((500, 400))
 
-@app.on
+
+@app.route
 def window_close(arg1, arg2, arg3, arg4, arg5, arg6):
+    app.emit('test_event', 2)
     print("Событие выполнено!")
 
 

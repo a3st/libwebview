@@ -1,3 +1,5 @@
+// Copyright © 2022-2023 Dmitriy Lukovenko. All rights reserved.
+
 #pragma once
 
 #include <iostream>
