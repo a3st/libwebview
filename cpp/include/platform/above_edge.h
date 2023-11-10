@@ -4,6 +4,7 @@
 #include <Windows.h>
 #undef NOMINMAX
 #include <dwmapi.h>
+#include <ShellScalingApi.h>
 #include <winrt/base.h>
 #include <webview2/WebView2.h>
 #include "thread_queue.h"
@@ -44,6 +45,7 @@ public:
 private:
 
     HWND window;
+    DEVICE_SCALE_FACTOR scale;
     std::tuple<uint32_t, uint32_t> min_window_size;
     std::tuple<uint32_t, uint32_t> max_window_size;
 

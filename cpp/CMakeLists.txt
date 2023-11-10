@@ -27,6 +27,7 @@ target_link_directories(AboveEdge PRIVATE
 target_link_libraries(AboveEdge
     dwmapi.lib
     WebView2LoaderStatic.lib
+    shcore.lib
 )
 
 target_compile_definitions(AboveEdge PRIVATE

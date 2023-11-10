@@ -151,6 +151,7 @@ AboveEdge::AboveEdge(
     min_window_size(1, 1), max_window_size(0, 0)
 {
     THROW_HRESULT_IF_FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
+    THROW_HRESULT_IF_FAILED(::SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE));
 
     auto wnd_class = WNDCLASSEX {
         .cbSize = sizeof(WNDCLASSEX),
@@ -176,8 +177,8 @@ AboveEdge::AboveEdge(
         style,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
-        std::get<0>(size),
-        std::get<1>(size),
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
         nullptr,
         nullptr,
         wnd_class.hInstance,
@@ -187,6 +188,19 @@ AboveEdge::AboveEdge(
     if(!window) {
         throw std::runtime_error("Failed to create window");
     }
+
+    HMONITOR monitor = ::MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
+    THROW_HRESULT_IF_FAILED(::GetScaleFactorForMonitor(monitor, &scale));
+
+    ::SetWindowPos(
+        window, 
+        nullptr, 
+        CW_USEDEFAULT, 
+        CW_USEDEFAULT, 
+        std::get<0>(size) * static_cast<float>(scale) / 100, 
+        std::get<1>(size) * static_cast<float>(scale) / 100, 
+        SWP_NOMOVE
+    );
 
     ::SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
@@ -275,15 +289,32 @@ auto AboveEdge::set_max_size(std::tuple<uint32_t, uint32_t> const size) -> void 
             ::SetWindowLong(window, GWL_STYLE, style);
         }
     }
-    max_window_size = size;
+
+    auto dpi_size = std::make_tuple<uint32_t, uint32_t>(
+        std::get<0>(size) * static_cast<uint32_t>(scale) / 100, 
+        std::get<1>(size) * static_cast<uint32_t>(scale) / 100
+    );
+    max_window_size = dpi_size;
 }
 
 auto AboveEdge::set_min_size(std::tuple<uint32_t, uint32_t> const size) -> void {
-    min_window_size = size;
+    auto dpi_size = std::make_tuple<uint32_t, uint32_t>(
+        std::get<0>(size) * static_cast<uint32_t>(scale) / 100, 
+        std::get<1>(size) * static_cast<uint32_t>(scale) / 100
+    );
+    min_window_size = dpi_size;
 }
 
 auto AboveEdge::set_size(std::tuple<uint32_t, uint32_t> const size) -> void {
-    ::SetWindowPos(window, nullptr, CW_USEDEFAULT, CW_USEDEFAULT, std::get<0>(size), std::get<1>(size), SWP_NOMOVE);
+    ::SetWindowPos(
+        window, 
+        nullptr, 
+        CW_USEDEFAULT, 
+        CW_USEDEFAULT, 
+        std::get<0>(size) * static_cast<uint32_t>(scale) / 100, 
+        std::get<1>(size) * static_cast<uint32_t>(scale) / 100, 
+        SWP_NOMOVE
+    );
 }
 
 auto AboveEdge::run(std::string_view const file_path) -> void {
