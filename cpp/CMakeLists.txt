@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25.3)
-project(Above VERSION 1.0.0)
+project(LibWebView VERSION 1.0.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
@@ -7,34 +7,34 @@ set(CMAKE_C_STANDARD 11)
 
 if(WIN32)
 
-add_library(AboveEdge SHARED
+add_library(WebViewEdge SHARED
     "src/thread_queue.cpp"
-    "src/platform/above_edge.cpp"
-    "src/above.cpp"
+    "src/platform/edge.cpp"
+    "src/webview.cpp"
 )
 
-target_include_directories(AboveEdge PRIVATE
+target_include_directories(WebViewEdge PRIVATE
     "${PROJECT_SOURCE_DIR}/src"
     "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/thirdparty/json/include"
     "${PROJECT_SOURCE_DIR}/thirdparty/webview2/include"
 )
 
-target_link_directories(AboveEdge PRIVATE
+target_link_directories(WebViewEdge PRIVATE
     "${PROJECT_SOURCE_DIR}/thirdparty/webview2/lib/x86_64"
 )
 
-target_link_libraries(AboveEdge
+target_link_libraries(WebViewEdge
     dwmapi.lib
     WebView2LoaderStatic.lib
     shcore.lib
 )
 
-target_compile_definitions(AboveEdge PRIVATE
-    ABOVE_EDGE
+target_compile_definitions(WebViewEdge PRIVATE
+    LIB_WEBVIEW_EDGE
 )
 
-target_precompile_headers(AboveEdge PRIVATE "include/precompiled.h")
+target_precompile_headers(WebViewEdge PRIVATE "include/precompiled.h")
 
 endif()
 

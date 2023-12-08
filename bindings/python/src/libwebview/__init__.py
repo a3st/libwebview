@@ -1,8 +1,8 @@
 import json
 import os
-from .wrapper import AboveLib
+from .wrapper import WebViewLib
 
-lib = AboveLib()
+lib = WebViewLib()
 
 class App:
     def __init__(
@@ -17,7 +17,7 @@ class App:
 
         width, height = size
 
-        self.instance = lib.above_create_app(
+        self.instance = lib.webview_create_app(
             app_name.encode(),
             title.encode(),
             width, height,
@@ -27,26 +27,31 @@ class App:
 
     
     def __del__(self):
-        lib.above_delete_app(self.instance)
+        lib.webview_delete_app(self.instance)
 
 
     def set_max_size(self, size: tuple[int, int]):
         width, height = size
-        lib.above_set_max_size_app(self.instance, width, height)
+        lib.webview_set_max_size_app(self.instance, width, height)
 
     
     def set_min_size(self, size: tuple[int, int]):
         width, height = size
-        lib.above_set_min_size_app(self.instance, width, height)
+        lib.webview_set_min_size_app(self.instance, width, height)
+
+    
+    def set_size(self, size: tuple[int, int]):
+        width, height = size
+        lib.webview_set_size_app(self.instance, width, height)
 
 
     def quit(self):
-        lib.above_quit_app(self.instance)
+        lib.webview_quit_app(self.instance)
 
 
-    def emit(self, event, args):
+    def emit(self, event: str, args):
         data = json.dumps(args)
-        lib.above_emit(self.instance, event.encode(), data.encode())
+        lib.webview_emit(self.instance, event.encode(), data.encode())
 
 
     def route(self, func):
@@ -58,19 +63,20 @@ class App:
                     ret = func()
                 else:
                     ret = func(*data[0])
+                    
                 if ret is not None:
                     data = json.dumps(ret)
-                    lib.above_result(self.instance, index, True, data.encode())
+                    lib.webview_result(self.instance, index, True, data.encode())
                 else:
-                    lib.above_result(self.instance, index, True, "{}".encode())
+                    lib.webview_result(self.instance, index, True, "{}".encode())
 
             except Exception as e:
                 data = json.dumps({ "error" : str(e) })
-                lib.above_result(self.instance, index, False, data.encode())
+                lib.webview_result(self.instance, index, False, data.encode())
 
-        self.callbacks.append(AboveLib.BIND_FUNC_T(lambda ctx, index, args: wrapper(ctx, index, args)))
+        self.callbacks.append(WebViewLib.BIND_FUNC_T(lambda ctx, index, args: wrapper(ctx, index, args)))
         
-        lib.above_bind(
+        lib.webview_bind(
             self.instance,
             func.__name__.encode(),
             self.callbacks[-1],
@@ -80,4 +86,4 @@ class App:
 
 
     def run(self, file_path: str):
-        lib.above_run_app(self.instance, ("file:///" + os.getcwd() + "/" + file_path).encode())
+        lib.webview_run_app(self.instance, ("file:///" + os.getcwd() + "/" + file_path).encode())

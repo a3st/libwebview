@@ -13,10 +13,10 @@
 using bind_func_t = std::function<void(uint64_t const, std::string_view const)>;
 using dispatch_func_t = std::function<HRESULT()>;
 
-class AboveEdge {
+class Edge {
 public:
 
-    AboveEdge(
+    Edge(
         std::string_view const app_name,
         std::string_view const title, 
         std::tuple<uint32_t, uint32_t> const size, 

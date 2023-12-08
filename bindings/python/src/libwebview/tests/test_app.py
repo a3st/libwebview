@@ -1,7 +1,4 @@
-import os
-os.add_dll_directory(os.path.join(os.getcwd(), "cpp", "build"))
-
-from above import App
+from libwebview import App
 
 app = App(
     app_name="test_app_python",
@@ -20,4 +17,4 @@ def window_close(arg1, arg2, arg3, arg4, arg5, arg6):
     print("Событие выполнено!")
 
 
-app.run("resources/index.html")
+app.run("../resources/index.html")

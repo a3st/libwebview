@@ -1,5 +1,5 @@
 #include "precompiled.h"
-#include "platform/above_edge.h"
+#include "platform/edge.h"
 #include <wrl/event.h>
 using namespace Microsoft::WRL;
 #include <nlohmann/json.hpp>
@@ -62,8 +62,8 @@ auto to_string(std::wstring_view const source) -> std::string {
 
 }
 
-auto AboveEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT {
-    auto window = reinterpret_cast<AboveEdge*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
+auto Edge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT {
+    auto window = reinterpret_cast<Edge*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
     if(!window) {
         return ::DefWindowProc(hwnd, msg, wparam, lparam);
@@ -100,7 +100,7 @@ auto AboveEdge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -
     return 0;
 }
 
-auto AboveEdge::navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT {
+auto Edge::navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT {
     if(!is_initialized) {
         is_initialized = true;
 
@@ -117,7 +117,7 @@ auto AboveEdge::navigation_completed(ICoreWebView2* sender, ICoreWebView2Navigat
     return S_OK;
 }
 
-auto AboveEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
+auto Edge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
     LPWSTR buffer;
     args->TryGetWebMessageAsString(&buffer);
 
@@ -139,7 +139,7 @@ auto AboveEdge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMess
     return S_OK;
 }
 
-AboveEdge::AboveEdge(
+Edge::Edge(
     std::string_view const app_name,
     std::string_view const title, 
     std::tuple<uint32_t, uint32_t> const size, 
@@ -259,12 +259,12 @@ AboveEdge::AboveEdge(
     THROW_HRESULT_IF_FAILED(controller->get_CoreWebView2(webview.put()));
 
     webview->add_NavigationCompleted(
-        Callback<ICoreWebView2NavigationCompletedEventHandler>(this, &AboveEdge::navigation_completed).Get(), 
+        Callback<ICoreWebView2NavigationCompletedEventHandler>(this, &Edge::navigation_completed).Get(), 
         &token
     );
 
     webview->add_WebMessageReceived(
-        Callback<ICoreWebView2WebMessageReceivedEventHandler>(this, &AboveEdge::web_message_received).Get(), 
+        Callback<ICoreWebView2WebMessageReceivedEventHandler>(this, &Edge::web_message_received).Get(), 
         &token
     );
 
@@ -275,7 +275,7 @@ AboveEdge::AboveEdge(
     settings->put_AreDefaultContextMenusEnabled(is_debug ? TRUE : FALSE);
 }
 
-auto AboveEdge::set_max_size(std::tuple<uint32_t, uint32_t> const size) -> void {
+auto Edge::set_max_size(std::tuple<uint32_t, uint32_t> const size) -> void {
     if(size == std::make_tuple<uint32_t, uint32_t>(0, 0)) {
         uint32_t style = ::GetWindowLong(window, GWL_STYLE);
         if(!(style & WS_MAXIMIZEBOX)) {
@@ -297,7 +297,7 @@ auto AboveEdge::set_max_size(std::tuple<uint32_t, uint32_t> const size) -> void 
     max_window_size = dpi_size;
 }
 
-auto AboveEdge::set_min_size(std::tuple<uint32_t, uint32_t> const size) -> void {
+auto Edge::set_min_size(std::tuple<uint32_t, uint32_t> const size) -> void {
     auto dpi_size = std::make_tuple<uint32_t, uint32_t>(
         std::get<0>(size) * static_cast<uint32_t>(scale) / 100, 
         std::get<1>(size) * static_cast<uint32_t>(scale) / 100
@@ -305,7 +305,7 @@ auto AboveEdge::set_min_size(std::tuple<uint32_t, uint32_t> const size) -> void 
     min_window_size = dpi_size;
 }
 
-auto AboveEdge::set_size(std::tuple<uint32_t, uint32_t> const size) -> void {
+auto Edge::set_size(std::tuple<uint32_t, uint32_t> const size) -> void {
     ::SetWindowPos(
         window, 
         nullptr, 
@@ -317,7 +317,7 @@ auto AboveEdge::set_size(std::tuple<uint32_t, uint32_t> const size) -> void {
     );
 }
 
-auto AboveEdge::run(std::string_view const file_path) -> void {
+auto Edge::run(std::string_view const file_path) -> void {
     std::wstring js = LR"(
         class Queue {
             constructor() {
@@ -369,13 +369,13 @@ auto AboveEdge::run(std::string_view const file_path) -> void {
             }
         }
 
-        class Above {
+        class WebView {
             static MAX_RESULTS = 100;
 
             constructor() {
                 this.results = {};
                 this.events = {};
-                this.allocator = new IndexAllocator(Above.MAX_RESULTS);
+                this.allocator = new IndexAllocator(WebView.MAX_RESULTS);
             }
 
             __free_result(index) {
@@ -410,7 +410,7 @@ auto AboveEdge::run(std::string_view const file_path) -> void {
     }
     js += LR"( 
         }
-        let ABOVE = new Above();
+        let webview = new WebView();
     )";
 
     webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr);
@@ -447,14 +447,14 @@ auto AboveEdge::run(std::string_view const file_path) -> void {
     THROW_HRESULT_IF_FAILED(controller->Close());
 }
 
-auto AboveEdge::bind(std::string_view const func_name, bind_func_t&& callback) -> void {
+auto Edge::bind(std::string_view const func_name, bind_func_t&& callback) -> void {
     if(callbacks.find(std::string(func_name)) != callbacks.end()) {
         throw std::runtime_error("Cannot to bind a function that already exists");
     }
     callbacks.insert({ std::string(func_name), std::move(callback) });
 }
 
-auto AboveEdge::execute_js(std::string_view const js) -> void {
+auto Edge::execute_js(std::string_view const js) -> void {
     main_queue.push(
         [data = internal::to_wstring(js), this]() -> HRESULT {
             return webview->ExecuteScript(data.c_str(), nullptr);
@@ -475,7 +475,7 @@ auto AboveEdge::execute_js(std::string_view const js) -> void {
     }*/
 }
 
-auto AboveEdge::result(uint64_t const index, bool const success, std::string_view const data) -> void {
+auto Edge::result(uint64_t const index, bool const success, std::string_view const data) -> void {
     std::string js;
     if(success) {
         js = std::format("ABOVE.results[{0}].resolve({1}); ABOVE.__free_result({0});", index, data);
@@ -485,7 +485,7 @@ auto AboveEdge::result(uint64_t const index, bool const success, std::string_vie
     execute_js(js);
 }
 
-auto AboveEdge::quit() -> void {
+auto Edge::quit() -> void {
     main_queue.push(
         []() -> HRESULT {
             ::PostQuitMessage(0);
@@ -508,7 +508,7 @@ auto AboveEdge::quit() -> void {
     }*/
 }
 
-auto AboveEdge::emit(std::string_view const event, std::string_view const data) -> void {
+auto Edge::emit(std::string_view const event, std::string_view const data) -> void {
     std::string const js =
         R"(
             if(')" + std::string(event) + R"(' in ABOVE.events) {

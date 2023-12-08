@@ -1,5 +1,6 @@
 cpp/build/*
-src/__pycache__/*
-src/webui/__pycache__/*
+__pycache__
 cpp/thirdparty/cef/bin/*
 cpp/thirdparty/cef/lib/*
+.vscode
+
