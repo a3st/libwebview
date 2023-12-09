@@ -3,4 +3,5 @@ __pycache__
 cpp/thirdparty/cef/bin/*
 cpp/thirdparty/cef/lib/*
 .vscode
-
+bindings/python/dist/*
+*.egg-info
