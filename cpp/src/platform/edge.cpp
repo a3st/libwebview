@@ -385,10 +385,8 @@ auto Edge::run(std::string_view const file_path) -> void {
             event(event, func) {
                 this.events[event] = func;
             }
-    )";
-    for(auto const& [name, func] : callbacks) {
-        js += internal::to_wstring(name) +
-            LR"((...args) {
+
+            invoke(name, ...args) {
                 const index = this.allocator.allocate();
 
                 let promise = new Promise((resolve, reject) => {
@@ -401,15 +399,14 @@ auto Edge::run(std::string_view const file_path) -> void {
                 window.chrome.webview.postMessage(
                     JSON.stringify({
                         index: index,
-                        func: ')" + internal::to_wstring(name) + LR"(',
+                        func: name,
                         args: Array.from(args)
                     })
                 );
                 return promise;
-            })";
-    }
-    js += LR"( 
-        }
+            }
+        };
+
         let webview = new WebView();
     )";
 

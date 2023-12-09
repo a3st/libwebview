@@ -2,7 +2,7 @@ from libwebview import App
 
 app = App(
     app_name="test_app_python",
-    title="WebUI Template", 
+    title="Test App", 
     size=(800, 600), 
     resizeable=True
 )
@@ -12,9 +12,8 @@ app.set_min_size((500, 400))
 
 
 @app.route
-def window_close(arg1, arg2, arg3, arg4, arg5, arg6):
-    app.emit('test_event', 2)
-    print("Событие выполнено!")
+def window_close():
+    app.quit()
 
 
-app.run("../resources/index.html")
+app.run("resources/index.html")
