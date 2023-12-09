@@ -405,7 +405,7 @@ auto Edge::run(std::string_view const file_path) -> void {
                 );
                 return promise;
             }
-        };
+        }
 
         let webview = new WebView();
     )";
@@ -475,9 +475,9 @@ auto Edge::execute_js(std::string_view const js) -> void {
 auto Edge::result(uint64_t const index, bool const success, std::string_view const data) -> void {
     std::string js;
     if(success) {
-        js = std::format("ABOVE.results[{0}].resolve({1}); ABOVE.__free_result({0});", index, data);
+        js = std::format("webview.results[{0}].resolve({1}); webview.__free_result({0});", index, data);
     } else {
-        js = std::format("ABOVE.results[{0}].reject({1}); ABOVE.__free_result({0});", index, data);
+        js = std::format("webview.results[{0}].reject({1}); webview.__free_result({0});", index, data);
     }
     execute_js(js);
 }
@@ -508,8 +508,8 @@ auto Edge::quit() -> void {
 auto Edge::emit(std::string_view const event, std::string_view const data) -> void {
     std::string const js =
         R"(
-            if(')" + std::string(event) + R"(' in ABOVE.events) {
-                ABOVE.events[')" + std::string(event) + R"(']()" + std::string(data) + R"()
+            if(')" + std::string(event) + R"(' in webview.events) {
+                webview.events[')" + std::string(event) + R"(']()" + std::string(data) + R"()
             }
         )";
     execute_js(js);

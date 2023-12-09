@@ -1,8 +1,17 @@
-
-webview.event('test_event', (data) => {
-    console.log(data)
+webview.event('update_time', (data) => {
+    let element = document.querySelector('#time');
+    element.innerHTML = data;
 })
 
 function quitApp() {
-    webview.invoke('window_close');
+    webview.invoke('app_close');
+}
+
+window.onload = () => {
+    webview.invoke('get_message').then(
+        (data) => {
+            let element = document.querySelector('#message');
+            element.innerHTML = data;
+        }
+    )
 }
