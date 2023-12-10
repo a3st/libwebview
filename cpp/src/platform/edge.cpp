@@ -410,8 +410,8 @@ auto Edge::run(std::string_view const file_path) -> void {
         let webview = new WebView();
     )";
 
-    webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr);
-    webview->Navigate(internal::to_wstring(file_path).c_str());
+    THROW_HRESULT_IF_FAILED(webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr));
+    THROW_HRESULT_IF_FAILED(webview->Navigate(internal::to_wstring(file_path).c_str()));
 
     auto msg = MSG {};
     bool running = true;

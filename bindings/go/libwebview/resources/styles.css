@@ -1,0 +1,49 @@
+* {
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    row-gap: 20px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    background: linear-gradient(232deg,#743d89,#8d66e9,#3a2bf8);
+    background-size: 180% 180%;
+    animation: gradient-animation 9s ease infinite;
+}
+  
+@keyframes gradient-animation {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+span {
+    color: white;
+    font-size: 32px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+button {
+    font-size: 14px;
+    padding: 12px;
+    border: none;
+    background-color: #d4d4d4;
+    border-radius: 6px;
+}
+
+button:hover {
+    background-color: #7b359b;
+}
