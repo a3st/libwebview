@@ -317,7 +317,7 @@ auto Edge::set_size(std::tuple<uint32_t, uint32_t> const size) -> void {
     );
 }
 
-auto Edge::run(std::string_view const file_path) -> void {
+auto Edge::run(std::string_view const url) -> void {
     std::wstring js = LR"(
         class Queue {
             constructor() {
@@ -411,7 +411,7 @@ auto Edge::run(std::string_view const file_path) -> void {
     )";
 
     THROW_HRESULT_IF_FAILED(webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr));
-    THROW_HRESULT_IF_FAILED(webview->Navigate(internal::to_wstring(file_path).c_str()));
+    THROW_HRESULT_IF_FAILED(webview->Navigate(internal::to_wstring(url).c_str()));
 
     auto msg = MSG {};
     bool running = true;

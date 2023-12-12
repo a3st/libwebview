@@ -21,8 +21,8 @@ void webview_delete_app(C_Webview instance) {
     delete instance;
 }
 
-void webview_run_app(C_Webview instance, char const* file_path) {
-    reinterpret_cast<WebviewImpl*>(instance)->run(file_path);
+void webview_run_app(C_Webview instance, char const* url) {
+    reinterpret_cast<WebviewImpl*>(instance)->run(url);
 }
 
 void webview_quit_app(C_Webview instance) {

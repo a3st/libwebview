@@ -2,7 +2,7 @@
     <head>
         <link rel="stylesheet" href="styles.css" />
         <script>
-            /*webview.event('update_time', (data) => {
+            webview.event('update_time', (data) => {
                 let element = document.querySelector('#time');
                 element.innerHTML = data;
             });
@@ -12,11 +12,12 @@
             window.onload = () => {
                 webview.invoke('get_message').then(
                     (data) => {
+                        console.log(data)
                         let element = document.querySelector('#message');
                         element.innerHTML = data;
                     }
                 );
-            }*/
+            }
         </script>
     </head>
     <body>

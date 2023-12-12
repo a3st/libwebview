@@ -56,9 +56,9 @@ LIB_WEBVIEW_API void webview_delete_app(C_Webview instance);
 //! Application main loop
 /*!
     \param instance pointer to application
-    \param file_path startup WebView html file
+    \param url startup WebView URL
 */
-LIB_WEBVIEW_API void webview_run_app(C_Webview instance, char const* file_path);
+LIB_WEBVIEW_API void webview_run_app(C_Webview instance, char const* url);
 
 //! Quit application
 /*!

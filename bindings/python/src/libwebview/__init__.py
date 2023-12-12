@@ -62,7 +62,7 @@ class App:
                 if len(data) == 0:
                     ret = func()
                 else:
-                    ret = func(*data[0])
+                    ret = func(*data)
                     
                 if ret is not None:
                     data = json.dumps(ret)

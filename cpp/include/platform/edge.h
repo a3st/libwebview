@@ -30,7 +30,7 @@ public:
 
     auto set_size(std::tuple<uint32_t, uint32_t> const size) -> void;
 
-    auto run(std::string_view const file_path) -> void;
+    auto run(std::string_view const url) -> void;
 
     auto bind(std::string_view const func_name, bind_func_t&& callback) -> void;
 
