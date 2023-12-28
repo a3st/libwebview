@@ -1,6 +1,6 @@
 [project]
 name = "libwebview"
-version = "1.0.1"
+version = "1.0.2"
 authors = [
     { name = "Dmitriy Lukovenko", email = "mludima23@gmail.com" }
 ]

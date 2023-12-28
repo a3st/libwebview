@@ -218,10 +218,13 @@ Edge::Edge(
 
     std::filesystem::path const app_data = std::getenv("APPDATA");
 
+    auto options = Make<CoreWebView2EnvironmentOptions>();
+    THROW_HRESULT_IF_FAILED(options->put_AdditionalBrowserArguments(L"--disable-web-security"));
+
     THROW_HRESULT_IF_FAILED(::CreateCoreWebView2EnvironmentWithOptions(
         nullptr, 
         (app_data / app_name).wstring().c_str(),
-        nullptr, 
+        options.Get(), 
         Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
             [&, this](HRESULT error_code, ICoreWebView2Environment* created_environment) -> HRESULT {
                 environment.attach(created_environment);

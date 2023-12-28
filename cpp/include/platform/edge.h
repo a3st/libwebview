@@ -7,6 +7,7 @@
 #include <ShellScalingApi.h>
 #include <winrt/base.h>
 #include <webview2/WebView2.h>
+#include <webview2/WebView2EnvironmentOptions.h>
 #include "thread_queue.h"
 #include "mutex_queue.h"
 
