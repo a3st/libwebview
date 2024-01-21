@@ -420,16 +420,11 @@ auto Edge::run(std::string_view const url) -> void {
     bool running = true;
 
     while(running) {
-        if(::GetMessage(&msg, nullptr, 0, 0) != -1) {
+        while(PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
             switch(msg.message) {
                 case WM_QUIT: {
                     running = false;
                 } break;
-                /*case WM_APP: {
-                    auto func = reinterpret_cast<dispatch_func_t*>(msg.lParam);
-                    THROW_HRESULT_IF_FAILED((*func)());
-                    delete func;
-                } break;*/
                 default: {
                     if(msg.hwnd) {
                         ::TranslateMessage(&msg);
