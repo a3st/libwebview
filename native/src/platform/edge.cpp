@@ -84,12 +84,13 @@ auto Edge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRE
         } break;
         case WM_GETMINMAXINFO: {
             MINMAXINFO* mmi = (MINMAXINFO*)lparam;
-            mmi->ptMinTrackSize.x = std::get<0>(window->min_window_size);
-            mmi->ptMinTrackSize.y = std::get<1>(window->min_window_size);
+            mmi->ptMinTrackSize.x = window->min_window_width;
+            mmi->ptMinTrackSize.y = window->min_window_height;
 
-            if(window->max_window_size != std::make_tuple(0u, 0u)) {
-                mmi->ptMaxTrackSize.x = std::get<0>(window->max_window_size);
-                mmi->ptMaxTrackSize.y = std::get<1>(window->max_window_size);
+            if(std::make_tuple(window->max_window_width, window->max_window_height) 
+                != std::make_tuple(0u, 0u)) {
+                mmi->ptMaxTrackSize.x = window->max_window_width;
+                mmi->ptMaxTrackSize.y = window->max_window_height;
             }
             return 0;
         } break;
@@ -142,13 +143,13 @@ auto Edge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageRe
 Edge::Edge(
     std::string_view const app_name,
     std::string_view const title, 
-    std::tuple<uint32_t, uint32_t> const size, 
+    uint32_t const width,
+    uint32_t const height, 
     bool const resizeable,
     bool const is_debug
 ) :
     is_initialized(false), semaphore(0),
-    main_thread_id(::GetCurrentThreadId()),
-    min_window_size(1, 1), max_window_size(0, 0)
+    main_thread_id(::GetCurrentThreadId())
 {
     THROW_HRESULT_IF_FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
     THROW_HRESULT_IF_FAILED(::SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE));
@@ -197,8 +198,8 @@ Edge::Edge(
         nullptr, 
         CW_USEDEFAULT, 
         CW_USEDEFAULT, 
-        std::get<0>(size) * static_cast<float>(scale) / 100, 
-        std::get<1>(size) * static_cast<float>(scale) / 100, 
+        width * static_cast<float>(scale) / 100, 
+        height * static_cast<float>(scale) / 100, 
         SWP_NOMOVE
     );
 
@@ -278,8 +279,8 @@ Edge::Edge(
     settings->put_AreDefaultContextMenusEnabled(is_debug ? TRUE : FALSE);
 }
 
-auto Edge::set_max_size(std::tuple<uint32_t, uint32_t> const size) -> void {
-    if(size == std::make_tuple<uint32_t, uint32_t>(0, 0)) {
+auto Edge::set_max_size(uint32_t const width, uint32_t const height) -> void {
+    if(std::make_tuple(width, height) == std::make_tuple<uint32_t, uint32_t>(0, 0)) {
         uint32_t style = ::GetWindowLong(window, GWL_STYLE);
         if(!(style & WS_MAXIMIZEBOX)) {
             style |= WS_MAXIMIZEBOX;
@@ -293,29 +294,23 @@ auto Edge::set_max_size(std::tuple<uint32_t, uint32_t> const size) -> void {
         }
     }
 
-    auto dpi_size = std::make_tuple<uint32_t, uint32_t>(
-        std::get<0>(size) * static_cast<uint32_t>(scale) / 100, 
-        std::get<1>(size) * static_cast<uint32_t>(scale) / 100
-    );
-    max_window_size = dpi_size;
+    max_window_width = width * static_cast<uint32_t>(scale) / 100;
+    max_window_height = height * static_cast<uint32_t>(scale) / 100;
 }
 
-auto Edge::set_min_size(std::tuple<uint32_t, uint32_t> const size) -> void {
-    auto dpi_size = std::make_tuple<uint32_t, uint32_t>(
-        std::get<0>(size) * static_cast<uint32_t>(scale) / 100, 
-        std::get<1>(size) * static_cast<uint32_t>(scale) / 100
-    );
-    min_window_size = dpi_size;
+auto Edge::set_min_size(uint32_t const width, uint32_t const height) -> void {
+    min_window_width = width * static_cast<uint32_t>(scale) / 100;
+    min_window_height = height * static_cast<uint32_t>(scale) / 100;
 }
 
-auto Edge::set_size(std::tuple<uint32_t, uint32_t> const size) -> void {
+auto Edge::set_size(uint32_t const width, uint32_t const height) -> void {
     ::SetWindowPos(
         window, 
         nullptr, 
         CW_USEDEFAULT, 
         CW_USEDEFAULT, 
-        std::get<0>(size) * static_cast<uint32_t>(scale) / 100, 
-        std::get<1>(size) * static_cast<uint32_t>(scale) / 100, 
+        width * static_cast<uint32_t>(scale) / 100, 
+        height * static_cast<uint32_t>(scale) / 100, 
         SWP_NOMOVE
     );
 }

@@ -2,22 +2,7 @@
 
 #pragma once
 
-template<typename Backend>
-class Webview : public Backend {
-public:
-    Webview(
-        std::string_view const app_name,
-        std::string_view const title, 
-        std::tuple<uint32_t, uint32_t> const size, 
-        bool const resizeable,
-        bool const is_debug
-    ) : Backend(app_name, title, size, resizeable, is_debug) { }
-};
-
-#ifdef LIB_WEBVIEW_EDGE
-#include "platform/edge.h"
-using WebviewImpl = Webview<Edge>;
-#endif
+#include "platform/platform.h"
 
 #ifdef WIN32
 #define LIB_WEBVIEW_API __declspec(dllexport)

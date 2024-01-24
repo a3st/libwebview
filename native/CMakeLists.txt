@@ -9,6 +9,7 @@ if(WIN32)
 
 add_library(WebViewEdge SHARED
     "src/thread_queue.cpp"
+    "src/platform/platform.cpp"
     "src/platform/edge.cpp"
     "src/webview.cpp"
 )

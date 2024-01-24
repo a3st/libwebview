@@ -1,5 +1,6 @@
 #pragma once
 
+#include "platform.h"
 #define NOMINMAX
 #include <Windows.h>
 #undef NOMINMAX
@@ -11,44 +12,46 @@
 #include "thread_queue.h"
 #include "mutex_queue.h"
 
-using bind_func_t = std::function<void(uint64_t const, std::string_view const)>;
 using dispatch_func_t = std::function<HRESULT()>;
 
-class Edge {
+class Edge : public Platform {
 public:
 
     Edge(
         std::string_view const app_name,
         std::string_view const title, 
-        std::tuple<uint32_t, uint32_t> const size, 
+        uint32_t const width,
+        uint32_t const height, 
         bool const resizeable,
         bool const is_debug
     );
 
-    auto set_max_size(std::tuple<uint32_t, uint32_t> const size) -> void;
+    auto set_max_size(uint32_t const width, uint32_t const height) -> void override;
 
-    auto set_min_size(std::tuple<uint32_t, uint32_t> const size) -> void;
+    auto set_min_size(uint32_t const width, uint32_t const height) -> void override;
 
-    auto set_size(std::tuple<uint32_t, uint32_t> const size) -> void;
+    auto set_size(uint32_t const width, uint32_t const height) -> void override;
 
-    auto run(std::string_view const url) -> void;
+    auto run(std::string_view const url) -> void override;
 
-    auto bind(std::string_view const func_name, bind_func_t&& callback) -> void;
+    auto bind(std::string_view const func_name, bind_func_t&& callback) -> void override;
 
-    auto execute_js(std::string_view const js) -> void;
+    auto execute_js(std::string_view const js) -> void override;
 
-    auto result(uint64_t const index, bool const success, std::string_view const data) -> void;
+    auto result(uint64_t const index, bool const success, std::string_view const data) -> void override;
 
-    auto quit() -> void;
+    auto quit() -> void override;
 
-    auto emit(std::string_view const event, std::string_view const data) -> void;
+    auto emit(std::string_view const event, std::string_view const data) -> void override;
 
 private:
 
     HWND window;
     DEVICE_SCALE_FACTOR scale;
-    std::tuple<uint32_t, uint32_t> min_window_size;
-    std::tuple<uint32_t, uint32_t> max_window_size;
+    uint32_t min_window_width{1};
+    uint32_t min_window_height{1};
+    uint32_t max_window_width{0};
+    uint32_t max_window_height{0};
 
     winrt::com_ptr<ICoreWebView2Environment> environment;
     winrt::com_ptr<ICoreWebView2Controller> controller;

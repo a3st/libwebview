@@ -1,7 +1,5 @@
-cpp/build/*
+build
 __pycache__
-cpp/thirdparty/cef/bin/*
-cpp/thirdparty/cef/lib/*
 .vscode
-bindings/python/dist/*
+dist
 *.egg-info
