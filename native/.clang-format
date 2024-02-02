@@ -1,0 +1,6 @@
+BasedOnStyle: Microsoft
+AlwaysBreakTemplateDeclarations: true
+NamespaceIndentation: All
+PointerAlignment: Left
+ReferenceAlignment: Left
+IndentCaseLabels: true

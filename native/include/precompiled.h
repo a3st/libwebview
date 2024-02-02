@@ -1,4 +1,4 @@
-// Copyright © 2022-2023 Dmitriy Lukovenko. All rights reserved.
+// Copyright © 2022-2024 Dmitriy Lukovenko. All rights reserved.
 
 #pragma once
 

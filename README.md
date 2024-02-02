@@ -8,9 +8,15 @@
 
 ## Requirements
 
-1. Windows
+* Windows
     * Installed WebView Edge component (Default on Windows 11)
     * Python 3.10+
+
+## Install
+
+```bash
+pip install libwebview
+```
 
 ## Example
 
