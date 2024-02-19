@@ -74,4 +74,14 @@ class App:
         return wrapper
 
     def run(self, file_path: str, callback=None):
-        lib.webview_run_app(self.instance, ("file:///" + file_path).encode(), callback)
+        if callback is None:
+            lib.webview_run_app(
+                self.instance,
+                ("file:///" + file_path).encode(),
+                WebViewLib.CUSTOM_UPDATE_FUNC_T(),
+                None,
+            )
+        else:
+            lib.webview_run_app(
+                self.instance, ("file:///" + file_path).encode(), callback, None
+            )
