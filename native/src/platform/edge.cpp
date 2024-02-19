@@ -106,7 +106,7 @@ namespace libwebview
     auto Edge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT
     {
         LPWSTR buffer;
-        args->TryGetWebMessageAsString(&buffer);
+        THROW_HRESULT_IF_FAILED(args->TryGetWebMessageAsString(&buffer));
 
         auto message_data = json::parse(internal::to_string(buffer));
         auto index = message_data["index"].get<uint64_t>();
@@ -270,7 +270,7 @@ namespace libwebview
                        height * static_cast<uint32_t>(scale) / 100, SWP_NOMOVE);
     }
 
-    auto Edge::startup(std::string_view const url) -> void
+    auto Edge::run(std::string_view const url) -> void
     {
         std::wstring js = LR"(
             class Queue {
@@ -366,11 +366,6 @@ namespace libwebview
 
         THROW_HRESULT_IF_FAILED(webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr));
         THROW_HRESULT_IF_FAILED(webview->Navigate(internal::to_wstring(url).c_str()));
-    }
-
-    auto Edge::run(std::string_view const url, custom_update_func_t&& callback) -> void
-    {
-        startup(url);
 
         auto msg = MSG{};
         bool running = true;
@@ -401,47 +396,18 @@ namespace libwebview
                 THROW_HRESULT_IF_FAILED(main_queue.pop_front()());
             }
 
-            callback();
+            if (update_callback)
+            {
+                thread_queue.push_task([&]() { update_callback(); });
+            }
         }
 
         THROW_HRESULT_IF_FAILED(controller->Close());
     }
 
-    auto Edge::run(std::string_view const url) -> void
+    auto Edge::bind_update(update_func_t&& callback) -> void
     {
-        startup(url);
-
-        auto msg = MSG{};
-        bool running = true;
-
-        while (running)
-        {
-            while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-            {
-                switch (msg.message)
-                {
-                    case WM_QUIT: {
-                        running = false;
-                        break;
-                    }
-                    default: {
-                        if (msg.hwnd)
-                        {
-                            ::TranslateMessage(&msg);
-                            ::DispatchMessage(&msg);
-                        }
-                        break;
-                    }
-                }
-            }
-
-            while (!main_queue.empty())
-            {
-                THROW_HRESULT_IF_FAILED(main_queue.pop_front()());
-            }
-        }
-
-        THROW_HRESULT_IF_FAILED(controller->Close());
+        update_callback = std::move(callback);
     }
 
     auto Edge::bind(std::string_view const func_name, bind_func_t&& callback) -> void

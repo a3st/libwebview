@@ -8,7 +8,7 @@ class WebViewLib:
     BIND_FUNC_T = ctypes.CFUNCTYPE(
         None, ctypes.c_void_p, ctypes.c_uint64, ctypes.c_char_p
     )
-    CUSTOM_UPDATE_FUNC_T = ctypes.CFUNCTYPE(None, ctypes.c_void_p)
+    UPDATE_FUNC_T = ctypes.CFUNCTYPE(None, ctypes.c_void_p)
 
     def __init__(self):
         LIB_WEBVIEW_DIR = os.path.dirname(__file__)
@@ -40,12 +40,7 @@ class WebViewLib:
 
         self.lib.webview_delete_app.argtypes = [ctypes.c_void_p]
 
-        self.lib.webview_run_app.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_char_p,
-            WebViewLib.CUSTOM_UPDATE_FUNC_T,
-            ctypes.c_void_p,
-        ]
+        self.lib.webview_run_app.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
 
         self.lib.webview_quit_app.argtypes = [ctypes.c_void_p]
 
@@ -74,6 +69,12 @@ class WebViewLib:
             ctypes.c_void_p,
         ]
 
+        self.lib.webview_bind_update.argtypes = [
+            ctypes.c_void_p,
+            WebViewLib.UPDATE_FUNC_T,
+            ctypes.c_void_p,
+        ]
+
         self.lib.webview_result.argtypes = [
             ctypes.c_void_p,
             ctypes.c_uint64,
@@ -94,6 +95,7 @@ class WebViewLib:
         self.webview_set_max_size_app = self.lib.webview_set_max_size_app
         self.webview_set_min_size_app = self.lib.webview_set_min_size_app
         self.webview_set_size_app = self.lib.webview_set_size_app
+        self.webview_bind_update = self.lib.webview_bind_update
         self.webview_bind = self.lib.webview_bind
         self.webview_result = self.lib.webview_result
         self.webview_emit = self.lib.webview_emit

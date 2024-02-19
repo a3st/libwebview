@@ -27,16 +27,9 @@ void webview_delete_app(C_Webview instance)
     delete instance;
 }
 
-void webview_run_app(C_Webview instance, char const* url, void (*callback)(void*), void* context)
+void webview_run_app(C_Webview instance, char const* url)
 {
-    if (!callback)
-    {
-        reinterpret_cast<Platform*>(instance)->run(url);
-    }
-    else
-    {
-        reinterpret_cast<Platform*>(instance)->run(url, [callback, context]() { callback(context); });
-    }
+    reinterpret_cast<Platform*>(instance)->run(url);
 }
 
 void webview_quit_app(C_Webview instance)
@@ -66,6 +59,11 @@ void webview_bind(C_Webview instance, char const* func_name, void (*callback)(vo
                                                 [callback, context](uint64_t const index, std::string_view const data) {
                                                     callback(context, index, data.data());
                                                 });
+}
+
+void webview_bind_update(C_Webview instance, void (*callback)(void*), void* context)
+{
+    reinterpret_cast<Platform*>(instance)->bind_update([callback, context]() { callback(context); });
 }
 
 void webview_result(C_Webview instance, uint64_t index, bool success, char const* data)

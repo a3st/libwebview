@@ -63,7 +63,7 @@ root_path = pathlib.Path(__file__).parent.resolve()
 setup(
     name='libwebview',
     packages=['libwebview'],
-    version='1.0.8',
+    version='1.0.9',
     author="Dmitriy Lukovenko",
     author_email='mludima23@gmail.com',
     description="Library for application development using WebView",

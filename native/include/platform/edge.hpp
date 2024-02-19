@@ -32,7 +32,7 @@ namespace libwebview
 
         auto run(std::string_view const url) -> void override;
 
-        auto run(std::string_view const url, custom_update_func_t&& callback) -> void override;
+        auto bind_update(update_func_t&& callback) -> void override;
 
         auto bind(std::string_view const func_name, bind_func_t&& callback) -> void override;
 
@@ -64,13 +64,12 @@ namespace libwebview
         MutexQueue<dispatch_func_t> main_queue;
 
         std::map<std::string, bind_func_t> callbacks;
+        update_func_t update_callback;
 
         static auto window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT;
 
         auto navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT;
 
         auto web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT;
-
-        auto startup(std::string_view const url) -> void;
     };
 } // namespace libwebview
