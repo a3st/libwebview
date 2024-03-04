@@ -41,7 +41,7 @@ class CMakeBuildExt(build_ext):
 
         try:
             output = subprocess.check_output([
-                os.path.join("C:/", "Program Files (x86)", "Microsoft Visual Studio", "Installer", "vswhere.exe"), 
+                os.path.abspath(os.path.join("C:", "Program Files (x86)", "Microsoft Visual Studio", "Installer", "vswhere.exe")), 
                 "-products", "*", 
                 "-format", "json", 
                 "-utf8", 
@@ -63,7 +63,7 @@ root_path = pathlib.Path(__file__).parent.resolve()
 setup(
     name='libwebview',
     packages=['libwebview'],
-    version='1.0.5',
+    version='1.0.4',
     author="Dmitriy Lukovenko",
     author_email='mludima23@gmail.com',
     description="Library for application development using WebView",

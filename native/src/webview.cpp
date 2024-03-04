@@ -1,7 +1,7 @@
 // Copyright © 2022-2024 Dmitriy Lukovenko. All rights reserved.
 
-#include "webview.h"
 #include "precompiled.h"
+#include "webview.h"
 
 using namespace libwebview;
 
@@ -27,16 +27,9 @@ void webview_delete_app(C_Webview instance)
     delete instance;
 }
 
-void webview_run_app(C_Webview instance, char const* url, void (*callback)(void*), void* context)
+void webview_run_app(C_Webview instance, char const* url)
 {
-    if (!callback)
-    {
-        reinterpret_cast<Platform*>(instance)->run(url);
-    }
-    else
-    {
-        reinterpret_cast<Platform*>(instance)->run(url, [callback, context]() { callback(context); });
-    }
+    reinterpret_cast<Platform*>(instance)->run(url);
 }
 
 void webview_quit_app(C_Webview instance)

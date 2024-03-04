@@ -3,88 +3,66 @@ import ctypes
 from ctypes import cdll
 import os
 
-
 class WebViewLib:
-    BIND_FUNC_T = ctypes.CFUNCTYPE(
-        None, ctypes.c_void_p, ctypes.c_uint64, ctypes.c_char_p
-    )
-    CUSTOM_UPDATE_FUNC_T = ctypes.CFUNCTYPE(None, ctypes.c_void_p)
+    BIND_FUNC_T = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_uint64, ctypes.c_char_p)
 
     def __init__(self):
         LIB_WEBVIEW_DIR = os.path.dirname(__file__)
 
         match platform.system():
-            case "Windows":
+            case 'Windows':
                 match platform.architecture()[0]:
-                    case "64bit":
+                    case '64bit':
                         LIB_PATH = os.path.join(LIB_WEBVIEW_DIR, "lib", "x86_64")
                     case _:
                         raise RuntimeError("Your system is not supported")
-
+                    
                 self.lib = cdll.LoadLibrary(os.path.join(LIB_PATH, "WebViewEdge.dll"))
-            case "Android":
+            case 'Android':
                 self.lib = None
             case _:
                 raise RuntimeError("Your system is not supported")
-
+        
         self.lib.webview_create_app.argtypes = [
-            ctypes.c_char_p,
-            ctypes.c_char_p,
-            ctypes.c_uint32,
-            ctypes.c_uint32,
+            ctypes.c_char_p, 
+            ctypes.c_char_p, 
+            ctypes.c_uint32, ctypes.c_uint32, 
             ctypes.c_bool,
-            ctypes.c_bool,
+            ctypes.c_bool
         ]
 
         self.lib.webview_create_app.restype = ctypes.c_void_p
 
-        self.lib.webview_delete_app.argtypes = [ctypes.c_void_p]
+        self.lib.webview_delete_app.argtypes = [ ctypes.c_void_p ]
 
-        self.lib.webview_run_app.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_char_p,
-            WebViewLib.CUSTOM_UPDATE_FUNC_T,
-            ctypes.c_void_p,
-        ]
+        self.lib.webview_run_app.argtypes = [ ctypes.c_void_p, ctypes.c_char_p ]
 
-        self.lib.webview_quit_app.argtypes = [ctypes.c_void_p]
+        self.lib.webview_quit_app.argtypes = [ ctypes.c_void_p ]
 
-        self.lib.webview_set_max_size_app.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_uint32,
-            ctypes.c_uint32,
-        ]
+        self.lib.webview_set_max_size_app.argtypes = [ ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32 ]
 
-        self.lib.webview_set_min_size_app.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_uint32,
-            ctypes.c_uint32,
-        ]
+        self.lib.webview_set_min_size_app.argtypes = [ ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32 ]
 
-        self.lib.webview_set_size_app.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_uint32,
-            ctypes.c_uint32,
-        ]
+        self.lib.webview_set_size_app.argtypes = [ ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32 ]
 
         self.lib.webview_bind.argtypes = [
             ctypes.c_void_p,
-            ctypes.c_char_p,
+            ctypes.c_char_p, 
             WebViewLib.BIND_FUNC_T,
-            ctypes.c_void_p,
+            ctypes.c_void_p
         ]
 
         self.lib.webview_result.argtypes = [
             ctypes.c_void_p,
             ctypes.c_uint64,
             ctypes.c_bool,
-            ctypes.c_char_p,
+            ctypes.c_char_p
         ]
 
         self.lib.webview_emit.argtypes = [
             ctypes.c_void_p,
             ctypes.c_char_p,
-            ctypes.c_char_p,
+            ctypes.c_char_p
         ]
 
         self.webview_create_app = self.lib.webview_create_app

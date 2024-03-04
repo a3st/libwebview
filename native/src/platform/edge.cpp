@@ -270,146 +270,102 @@ namespace libwebview
                        height * static_cast<uint32_t>(scale) / 100, SWP_NOMOVE);
     }
 
-    auto Edge::startup(std::string_view const url) -> void
+    auto Edge::run(std::string_view const url) -> void
     {
         std::wstring js = LR"(
-            class Queue {
-                constructor() {
-                    this.elements = {};
-                    this.head = 0;
-                    this.tail = 0;
-                }
+        class Queue {
+            constructor() {
+                this.elements = {};
+                this.head = 0;
+                this.tail = 0;
+            }
 
-                enqueue(element) {
-                    this.elements[this.tail] = element;
-                    this.tail++;
-                }
+            enqueue(element) {
+                this.elements[this.tail] = element;
+                this.tail++;
+            }
 
-                dequeue() {
-                    const item = this.elements[this.head];
-                    delete this.elements[this.head];
-                    this.head++;
-                    return item;
-                }
+            dequeue() {
+                const item = this.elements[this.head];
+                delete this.elements[this.head];
+                this.head++;
+                return item;
+            }
 
-                peek() {
-                    return this.elements[this.head];
-                }
+            peek() {
+                return this.elements[this.head];
+            }
 
-                length() {
-                    return this.tail - this.head;
-                }
+            length() {
+                return this.tail - this.head;
+            }
 
-                isEmpty() {
-                    return this.length == 0;
+            isEmpty() {
+                return this.length == 0;
+            }
+        }
+
+        class IndexAllocator {
+            constructor(count) {
+                this.queue = new Queue();
+
+                for(let i = 0; i < count; i++) {
+                    this.queue.enqueue(i);
                 }
             }
 
-            class IndexAllocator {
-                constructor(count) {
-                    this.queue = new Queue();
-
-                    for(let i = 0; i < count; i++) {
-                        this.queue.enqueue(i);
-                    }
-                }
-
-                allocate() {
-                    return this.queue.dequeue();
-                }
-
-                deallocate(element) {
-                    this.queue.enqueue(element);
-                }
+            allocate() {
+                return this.queue.dequeue();
             }
 
-            class WebView {
-                static MAX_RESULTS = 100;
+            deallocate(element) {
+                this.queue.enqueue(element);
+            }
+        }
 
-                constructor() {
-                    this.results = {};
-                    this.events = {};
-                    this.allocator = new IndexAllocator(WebView.MAX_RESULTS);
-                }
+        class WebView {
+            static MAX_RESULTS = 100;
 
-                __free_result(index) {
-                    this.allocator.deallocate(index);
-                }
-
-                event(event, func) {
-                    this.events[event] = func;
-                }
-
-                invoke(name, ...args) {
-                    const index = this.allocator.allocate();
-
-                    let promise = new Promise((resolve, reject) => {
-                            this.results[index] = {
-                            resolve: resolve,
-                            reject: reject
-                        };
-                    });
-
-                    window.chrome.webview.postMessage(
-                        JSON.stringify({
-                            index: index,
-                            func: name,
-                            args: Array.from(args)
-                        })
-                    );
-                    return promise;
-                }
+            constructor() {
+                this.results = {};
+                this.events = {};
+                this.allocator = new IndexAllocator(WebView.MAX_RESULTS);
             }
 
-            let webview = new WebView();
-        )";
+            __free_result(index) {
+                this.allocator.deallocate(index);
+            }
+
+            event(event, func) {
+                this.events[event] = func;
+            }
+
+            invoke(name, ...args) {
+                const index = this.allocator.allocate();
+
+                let promise = new Promise((resolve, reject) => {
+                        this.results[index] = {
+                        resolve: resolve,
+                        reject: reject
+                    };
+                });
+
+                window.chrome.webview.postMessage(
+                    JSON.stringify({
+                        index: index,
+                        func: name,
+                        args: Array.from(args)
+                    })
+                );
+                return promise;
+            }
+        }
+
+        let webview = new WebView();
+    )";
 
         THROW_HRESULT_IF_FAILED(webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr));
         THROW_HRESULT_IF_FAILED(webview->Navigate(internal::to_wstring(url).c_str()));
-    }
-
-    auto Edge::run(std::string_view const url, custom_update_func_t&& callback) -> void
-    {
-        startup(url);
-
-        auto msg = MSG{};
-        bool running = true;
-
-        while (running)
-        {
-            while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-            {
-                switch (msg.message)
-                {
-                    case WM_QUIT: {
-                        running = false;
-                        break;
-                    }
-                    default: {
-                        if (msg.hwnd)
-                        {
-                            ::TranslateMessage(&msg);
-                            ::DispatchMessage(&msg);
-                        }
-                        break;
-                    }
-                }
-            }
-
-            while (!main_queue.empty())
-            {
-                THROW_HRESULT_IF_FAILED(main_queue.pop_front()());
-            }
-
-            callback();
-        }
-
-        THROW_HRESULT_IF_FAILED(controller->Close());
-    }
-
-    auto Edge::run(std::string_view const url) -> void
-    {
-        startup(url);
 
         auto msg = MSG{};
         bool running = true;

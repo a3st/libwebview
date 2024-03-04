@@ -32,8 +32,6 @@ namespace libwebview
 
         auto run(std::string_view const url) -> void override;
 
-        auto run(std::string_view const url, custom_update_func_t&& callback) -> void override;
-
         auto bind(std::string_view const func_name, bind_func_t&& callback) -> void override;
 
         auto execute_js(std::string_view const js) -> void override;
@@ -70,7 +68,5 @@ namespace libwebview
         auto navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT;
 
         auto web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT;
-
-        auto startup(std::string_view const url) -> void;
     };
 } // namespace libwebview

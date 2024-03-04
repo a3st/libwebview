@@ -37,7 +37,7 @@ extern "C"
         \param instance pointer to application
         \param url startup WebView URL
     */
-    LIB_WEBVIEW_API void webview_run_app(C_Webview instance, char const* url, void(*callback)(void*), void* context);
+    LIB_WEBVIEW_API void webview_run_app(C_Webview instance, char const* url);
 
     //! Quit application
     /*!
