@@ -15,7 +15,6 @@ class App:
         is_debug: bool = True,
     ):
         self.callbacks = []
-        self.update_callback = None
 
         width, height = size
 
@@ -44,14 +43,6 @@ class App:
     def emit(self, event: str, args):
         data = json.dumps(args)
         lib.webview_emit(self.instance, event.encode(), data.encode())
-
-    def updated(self, func):
-        def wrapper(ctx):
-            func()
-
-        self.update_callback = WebViewLib.UPDATE_FUNC_T(lambda ctx: wrapper(ctx))
-        lib.webview_bind_update(self.instance, self.update_callback, None)
-        return wrapper
 
     def route(self, func):
         def wrapper(ctx, index, args):
@@ -82,5 +73,18 @@ class App:
         )
         return wrapper
 
-    def run(self, file_path: str):
-        lib.webview_run_app(self.instance, ("file:///" + file_path).encode())
+    def run(self, file_path: str, callback=None):
+        if callback is None:
+            lib.webview_run_app(
+                self.instance,
+                ("file:///" + file_path).encode(),
+                WebViewLib.CUSTOM_UPDATE_FUNC_T(),
+                None,
+            )
+        else:
+            lib.webview_run_app(
+                self.instance,
+                ("file:///" + file_path).encode(),
+                WebViewLib.CUSTOM_UPDATE_FUNC_T(lambda ctx: callback()),
+                None,
+            )
