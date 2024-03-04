@@ -1,6 +1,7 @@
 // Copyright © 2022-2024 Dmitriy Lukovenko. All rights reserved.
 
 #include "webview.h"
+#include "platform/platform.hpp"
 #include "precompiled.h"
 
 using namespace libwebview;
@@ -67,4 +68,9 @@ void webview_result(C_Webview instance, uint64_t index, bool success, char const
 void webview_emit(C_Webview instance, char const* event, char const* data)
 {
     reinterpret_cast<Platform*>(instance)->emit(event, data);
+}
+
+void webview_invoke(C_Webview instance, void (*callback)(void*), void* context)
+{
+    reinterpret_cast<Platform*>(instance)->invoke([callback, context]() { callback(context); });
 }

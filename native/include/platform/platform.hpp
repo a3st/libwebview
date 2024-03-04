@@ -2,8 +2,11 @@
 
 #pragma once
 
+#include "mutex_queue.hpp"
+
 namespace libwebview
 {
+    using invoke_func_t = std::function<void()>;
     using bind_func_t = std::function<void(uint64_t const, std::string_view const)>;
 
     enum class PlatformType
@@ -27,14 +30,20 @@ namespace libwebview
 
         virtual auto run(std::string_view const url) -> void = 0;
 
-        virtual auto bind(std::string_view const name, bind_func_t&& callback) -> void = 0;
-
         virtual auto execute_js(std::string_view const js) -> void = 0;
-
-        virtual auto result(uint64_t const index, bool const success, std::string_view const data) -> void = 0;
 
         virtual auto quit() -> void = 0;
 
-        virtual auto emit(std::string_view const event, std::string_view const data) -> void = 0;
+        auto bind(std::string_view const name, bind_func_t&& callback) -> void;
+
+        auto result(uint64_t const index, bool const success, std::string_view const data) -> void;
+
+        auto emit(std::string_view const event, std::string_view const data) -> void;
+
+        auto invoke(invoke_func_t&& callback) -> void;
+
+      protected:
+        MutexQueue<invoke_func_t> main_queue;
+        std::map<std::string, bind_func_t> callbacks;
     };
 } // namespace libwebview

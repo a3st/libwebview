@@ -6,8 +6,6 @@
 #define NOMINMAX
 #include <Windows.h>
 #undef NOMINMAX
-#include "mutex_queue.hpp"
-#include "thread_queue.hpp"
 #include <ShellScalingApi.h>
 #include <dwmapi.h>
 #include <webview2/WebView2.h>
@@ -16,9 +14,7 @@
 
 namespace libwebview
 {
-    using dispatch_func_t = std::function<HRESULT()>;
-
-    class Edge : public Platform
+    class Edge final : public Platform
     {
       public:
         Edge(std::string_view const app_name, std::string_view const title, uint32_t const width, uint32_t const height,
@@ -32,15 +28,9 @@ namespace libwebview
 
         auto run(std::string_view const url) -> void override;
 
-        auto bind(std::string_view const name, bind_func_t&& callback) -> void override;
-
         auto execute_js(std::string_view const js) -> void override;
 
-        auto result(uint64_t const index, bool const success, std::string_view const data) -> void override;
-
         auto quit() -> void override;
-
-        auto emit(std::string_view const event, std::string_view const data) -> void override;
 
       private:
         HWND window;
@@ -58,10 +48,6 @@ namespace libwebview
         bool is_initialized;
         DWORD main_thread_id;
         std::binary_semaphore semaphore;
-        ThreadQueue thread_queue;
-        MutexQueue<dispatch_func_t> main_queue;
-
-        std::map<std::string, bind_func_t> callbacks;
 
         static auto window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT;
 

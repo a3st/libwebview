@@ -7,7 +7,7 @@ using namespace Microsoft::WRL;
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-#define THROW_HRESULT_IF_FAILED(HRESULT)                                                                               \
+#define THROW_IF_FAILED(HRESULT)                                                                                       \
     if (FAILED(HRESULT))                                                                                               \
     {                                                                                                                  \
         throw std::runtime_error(                                                                                      \
@@ -106,7 +106,7 @@ namespace libwebview
     auto Edge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT
     {
         LPWSTR buffer;
-        args->TryGetWebMessageAsString(&buffer);
+        THROW_IF_FAILED(args->TryGetWebMessageAsString(&buffer));
 
         auto message_data = json::parse(internal::to_string(buffer));
         auto index = message_data["index"].get<uint64_t>();
@@ -116,7 +116,7 @@ namespace libwebview
         auto found = callbacks.find(func_name);
         if (found != callbacks.end())
         {
-            thread_queue.push_task([&, found, index, args_data]() -> void { found->second(index, args_data); });
+            found->second(index, args_data);
         }
 
         ::CoTaskMemFree(buffer);
@@ -127,8 +127,8 @@ namespace libwebview
                uint32_t const height, bool const resizeable, bool const debug_mode)
         : is_initialized(false), semaphore(0), main_thread_id(::GetCurrentThreadId())
     {
-        THROW_HRESULT_IF_FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
-        THROW_HRESULT_IF_FAILED(::SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE));
+        THROW_IF_FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
+        THROW_IF_FAILED(::SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE));
 
         auto wnd_class = WNDCLASSEX{.cbSize = sizeof(WNDCLASSEX),
                                     .lpfnWndProc = window_proc,
@@ -157,7 +157,7 @@ namespace libwebview
         }
 
         HMONITOR monitor = ::MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
-        THROW_HRESULT_IF_FAILED(::GetScaleFactorForMonitor(monitor, &scale));
+        THROW_IF_FAILED(::GetScaleFactorForMonitor(monitor, &scale));
 
         ::SetWindowPos(window, nullptr, CW_USEDEFAULT, CW_USEDEFAULT, width * static_cast<float>(scale) / 100,
                        height * static_cast<float>(scale) / 100, SWP_NOMOVE);
@@ -165,11 +165,10 @@ namespace libwebview
         ::SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
         BOOL enabled = TRUE;
-        THROW_HRESULT_IF_FAILED(
-            ::DwmSetWindowAttribute(window, DWMWA_USE_IMMERSIVE_DARK_MODE, &enabled, sizeof(enabled)));
+        THROW_IF_FAILED(::DwmSetWindowAttribute(window, DWMWA_USE_IMMERSIVE_DARK_MODE, &enabled, sizeof(enabled)));
 
         LPWSTR version;
-        THROW_HRESULT_IF_FAILED(::GetAvailableCoreWebView2BrowserVersionString(nullptr, &version));
+        THROW_IF_FAILED(::GetAvailableCoreWebView2BrowserVersionString(nullptr, &version));
 
         if (!version)
         {
@@ -181,9 +180,9 @@ namespace libwebview
         std::filesystem::path const app_data = std::getenv("APPDATA");
 
         auto options = Make<CoreWebView2EnvironmentOptions>();
-        THROW_HRESULT_IF_FAILED(options->put_AdditionalBrowserArguments(L"--disable-web-security"));
+        THROW_IF_FAILED(options->put_AdditionalBrowserArguments(L"--disable-web-security"));
 
-        THROW_HRESULT_IF_FAILED(::CreateCoreWebView2EnvironmentWithOptions(
+        THROW_IF_FAILED(::CreateCoreWebView2EnvironmentWithOptions(
             nullptr, (app_data / app_name).wstring().c_str(), options.Get(),
             Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
                 [&, this](HRESULT error_code, ICoreWebView2Environment* created_environment) -> HRESULT {
@@ -202,7 +201,7 @@ namespace libwebview
             ::DispatchMessage(&msg);
         }
 
-        THROW_HRESULT_IF_FAILED(environment->CreateCoreWebView2Controller(
+        THROW_IF_FAILED(environment->CreateCoreWebView2Controller(
             window, Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
                         [&, this](HRESULT error_code, ICoreWebView2Controller* created_controller) -> HRESULT {
                             controller.attach(created_controller);
@@ -218,19 +217,19 @@ namespace libwebview
             ::DispatchMessage(&msg);
         }
 
-        THROW_HRESULT_IF_FAILED(controller->get_CoreWebView2(webview.put()));
+        THROW_IF_FAILED(controller->get_CoreWebView2(webview.put()));
 
-        webview->add_NavigationCompleted(
-            Callback<ICoreWebView2NavigationCompletedEventHandler>(this, &Edge::navigation_completed).Get(), &token);
+        THROW_IF_FAILED(webview->add_NavigationCompleted(
+            Callback<ICoreWebView2NavigationCompletedEventHandler>(this, &Edge::navigation_completed).Get(), &token));
 
-        webview->add_WebMessageReceived(
-            Callback<ICoreWebView2WebMessageReceivedEventHandler>(this, &Edge::web_message_received).Get(), &token);
+        THROW_IF_FAILED(webview->add_WebMessageReceived(
+            Callback<ICoreWebView2WebMessageReceivedEventHandler>(this, &Edge::web_message_received).Get(), &token));
 
         winrt::com_ptr<ICoreWebView2Settings> settings;
-        THROW_HRESULT_IF_FAILED(webview->get_Settings(settings.put()));
+        THROW_IF_FAILED(webview->get_Settings(settings.put()));
 
-        settings->put_AreDevToolsEnabled(debug_mode ? TRUE : FALSE);
-        settings->put_AreDefaultContextMenusEnabled(debug_mode ? TRUE : FALSE);
+        THROW_IF_FAILED(settings->put_AreDevToolsEnabled(debug_mode ? TRUE : FALSE));
+        THROW_IF_FAILED(settings->put_AreDefaultContextMenusEnabled(debug_mode ? TRUE : FALSE));
     }
 
     auto Edge::set_max_size(uint32_t const width, uint32_t const height) -> void
@@ -364,8 +363,8 @@ namespace libwebview
         let webview = new WebView();
     )";
 
-        THROW_HRESULT_IF_FAILED(webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr));
-        THROW_HRESULT_IF_FAILED(webview->Navigate(internal::to_wstring(url).c_str()));
+        THROW_IF_FAILED(webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr));
+        THROW_IF_FAILED(webview->Navigate(internal::to_wstring(url).c_str()));
 
         auto msg = MSG{};
         bool running = true;
@@ -393,61 +392,20 @@ namespace libwebview
 
             while (!main_queue.empty())
             {
-                THROW_HRESULT_IF_FAILED(main_queue.pop_front()());
+                main_queue.pop_front()();
             }
         }
 
-        THROW_HRESULT_IF_FAILED(controller->Close());
-    }
-
-    auto Edge::bind(std::string_view const name, bind_func_t&& callback) -> void
-    {
-        if (callbacks.find(std::string(name)) != callbacks.end())
-        {
-            throw std::runtime_error("Cannot to bind a function that already exists");
-        }
-        callbacks.insert({std::string(name), std::move(callback)});
+        THROW_IF_FAILED(controller->Close());
     }
 
     auto Edge::execute_js(std::string_view const js) -> void
     {
-        main_queue.push([data = internal::to_wstring(js), this]() -> HRESULT {
-            return webview->ExecuteScript(data.c_str(), nullptr);
-        });
-    }
-
-    auto Edge::result(uint64_t const index, bool const success, std::string_view const data) -> void
-    {
-        std::string js;
-        if (success)
-        {
-            js = std::format("webview.results[{0}].resolve({1}); webview.__free_result({0});", index, data);
-        }
-        else
-        {
-            js = std::format("webview.results[{0}].reject({1}); webview.__free_result({0});", index, data);
-        }
-        execute_js(js);
+        THROW_IF_FAILED(webview->ExecuteScript(internal::to_wstring(js).c_str(), nullptr));
     }
 
     auto Edge::quit() -> void
     {
-        main_queue.push([]() -> HRESULT {
-            ::PostQuitMessage(0);
-            return S_OK;
-        });
-    }
-
-    auto Edge::emit(std::string_view const event, std::string_view const data) -> void
-    {
-        std::string const js =
-            R"(
-            if(')" +
-            std::string(event) + R"(' in webview.events) {
-                webview.events[')" +
-            std::string(event) + R"(']()" + std::string(data) + R"()
-            }
-        )";
-        execute_js(js);
+        ::PostQuitMessage(0);
     }
 } // namespace libwebview

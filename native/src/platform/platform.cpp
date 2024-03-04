@@ -26,4 +26,45 @@ namespace libwebview
         }
         return platform;
     }
+
+    auto Platform::bind(std::string_view const name, bind_func_t&& callback) -> void
+    {
+        if (callbacks.find(std::string(name)) != callbacks.end())
+        {
+            throw std::runtime_error("Cannot to bind a function that already exists");
+        }
+        callbacks.insert({std::string(name), std::move(callback)});
+    }
+
+    auto Platform::result(uint64_t const index, bool const success, std::string_view const data) -> void
+    {
+        std::string js;
+        if (success)
+        {
+            js = std::format("webview.results[{0}].resolve({1}); webview.__free_result({0});", index, data);
+        }
+        else
+        {
+            js = std::format("webview.results[{0}].reject({1}); webview.__free_result({0});", index, data);
+        }
+        execute_js(js);
+    }
+
+    auto Platform::emit(std::string_view const event, std::string_view const data) -> void
+    {
+        std::string const js =
+            R"(
+            if(')" +
+            std::string(event) + R"(' in webview.events) {
+                webview.events[')" +
+            std::string(event) + R"(']()" + std::string(data) + R"()
+            }
+        )";
+        execute_js(js);
+    }
+
+    auto Platform::invoke(invoke_func_t&& callback) -> void
+    {
+        main_queue.push(std::move(callback));
+    }
 } // namespace libwebview
