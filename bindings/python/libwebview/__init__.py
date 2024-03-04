@@ -83,8 +83,5 @@ class App:
             )
         else:
             lib.webview_run_app(
-                self.instance,
-                ("file:///" + file_path).encode(),
-                WebViewLib.CUSTOM_UPDATE_FUNC_T(lambda ctx: callback()),
-                None,
+                self.instance, ("file:///" + file_path).encode(), callback, None
             )
