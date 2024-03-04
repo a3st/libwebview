@@ -9,15 +9,14 @@ namespace libwebview
     enum class PlatformType
     {
         Edge,
-        WebKit,
-        CEF
+        WebKit
     };
 
     class Platform
     {
       public:
         static auto create(std::string_view const app_name, std::string_view const title, uint32_t const width,
-                           uint32_t const height, bool const resizeable, bool const is_debug,
+                           uint32_t const height, bool const resizeable, bool const debug_mode,
                            PlatformType const platform_type) -> Platform*;
 
         virtual auto set_max_size(uint32_t const width, uint32_t const height) -> void = 0;
@@ -28,7 +27,7 @@ namespace libwebview
 
         virtual auto run(std::string_view const url) -> void = 0;
 
-        virtual auto bind(std::string_view const func_name, bind_func_t&& callback) -> void = 0;
+        virtual auto bind(std::string_view const name, bind_func_t&& callback) -> void = 0;
 
         virtual auto execute_js(std::string_view const js) -> void = 0;
 

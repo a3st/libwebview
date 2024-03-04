@@ -22,7 +22,7 @@ namespace libwebview
     {
       public:
         Edge(std::string_view const app_name, std::string_view const title, uint32_t const width, uint32_t const height,
-             bool const resizeable, bool const is_debug);
+             bool const resizeable, bool const debug_mode);
 
         auto set_max_size(uint32_t const width, uint32_t const height) -> void override;
 
@@ -32,7 +32,7 @@ namespace libwebview
 
         auto run(std::string_view const url) -> void override;
 
-        auto bind(std::string_view const func_name, bind_func_t&& callback) -> void override;
+        auto bind(std::string_view const name, bind_func_t&& callback) -> void override;
 
         auto execute_js(std::string_view const js) -> void override;
 

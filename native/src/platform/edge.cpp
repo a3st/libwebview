@@ -124,7 +124,7 @@ namespace libwebview
     }
 
     Edge::Edge(std::string_view const app_name, std::string_view const title, uint32_t const width,
-               uint32_t const height, bool const resizeable, bool const is_debug)
+               uint32_t const height, bool const resizeable, bool const debug_mode)
         : is_initialized(false), semaphore(0), main_thread_id(::GetCurrentThreadId())
     {
         THROW_HRESULT_IF_FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
@@ -229,8 +229,8 @@ namespace libwebview
         winrt::com_ptr<ICoreWebView2Settings> settings;
         THROW_HRESULT_IF_FAILED(webview->get_Settings(settings.put()));
 
-        settings->put_AreDevToolsEnabled(is_debug ? TRUE : FALSE);
-        settings->put_AreDefaultContextMenusEnabled(is_debug ? TRUE : FALSE);
+        settings->put_AreDevToolsEnabled(debug_mode ? TRUE : FALSE);
+        settings->put_AreDefaultContextMenusEnabled(debug_mode ? TRUE : FALSE);
     }
 
     auto Edge::set_max_size(uint32_t const width, uint32_t const height) -> void
@@ -400,13 +400,13 @@ namespace libwebview
         THROW_HRESULT_IF_FAILED(controller->Close());
     }
 
-    auto Edge::bind(std::string_view const func_name, bind_func_t&& callback) -> void
+    auto Edge::bind(std::string_view const name, bind_func_t&& callback) -> void
     {
-        if (callbacks.find(std::string(func_name)) != callbacks.end())
+        if (callbacks.find(std::string(name)) != callbacks.end())
         {
             throw std::runtime_error("Cannot to bind a function that already exists");
         }
-        callbacks.insert({std::string(func_name), std::move(callback)});
+        callbacks.insert({std::string(name), std::move(callback)});
     }
 
     auto Edge::execute_js(std::string_view const js) -> void

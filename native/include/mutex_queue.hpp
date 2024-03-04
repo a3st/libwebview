@@ -10,8 +10,6 @@ namespace libwebview
       public:
         MutexQueue() = default;
 
-        ~MutexQueue() = default;
-
         auto pop_front() -> Type
         {
             std::lock_guard lock(mutex);

@@ -72,10 +72,10 @@ extern "C"
     //! Bind function for call from JS
     /*!
         \param instance pointer to application
-        \param func_name a function name
+        \param name a function name
         \param callback a binded callback (context, index, data) -> void
     */
-    LIB_WEBVIEW_API void webview_bind(C_Webview instance, char const* func_name,
+    LIB_WEBVIEW_API void webview_bind(C_Webview instance, char const* name,
                                       void (*callback)(void*, uint64_t, char const*), void* context);
 
     //! Return result to JS function

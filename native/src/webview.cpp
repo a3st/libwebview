@@ -1,20 +1,19 @@
 // Copyright © 2022-2024 Dmitriy Lukovenko. All rights reserved.
 
-#include "precompiled.h"
 #include "webview.h"
+#include "precompiled.h"
 
 using namespace libwebview;
 
 C_Webview webview_create_app(char const* app_name, char const* title, uint32_t const width, uint32_t const height,
-                             bool const resizeable, bool const is_debug)
+                             bool const resizeable, bool const debug_mode)
 {
 #ifdef LIB_WEBVIEW_EDGE
     PlatformType platform_type = PlatformType::Edge;
 #endif
-
     try
     {
-        return Platform::create(app_name, title, width, height, resizeable, is_debug, platform_type);
+        return Platform::create(app_name, title, width, height, resizeable, debug_mode, platform_type);
     }
     catch (std::runtime_error e)
     {
@@ -52,10 +51,9 @@ void webview_set_size_app(C_Webview instance, uint32_t const width, uint32_t con
     reinterpret_cast<Platform*>(instance)->set_size(width, height);
 }
 
-void webview_bind(C_Webview instance, char const* func_name, void (*callback)(void*, uint64_t, char const*),
-                  void* context)
+void webview_bind(C_Webview instance, char const* name, void (*callback)(void*, uint64_t, char const*), void* context)
 {
-    reinterpret_cast<Platform*>(instance)->bind(func_name,
+    reinterpret_cast<Platform*>(instance)->bind(name,
                                                 [callback, context](uint64_t const index, std::string_view const data) {
                                                     callback(context, index, data.data());
                                                 });
