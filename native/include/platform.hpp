@@ -34,16 +34,16 @@ namespace libwebview
 
         virtual auto quit() -> void = 0;
 
-        auto bind(std::string_view const func, bind_func_t&& callback) -> void;
+        auto bind(std::string_view const func, bind_func_t&& callback, void* context) -> void;
 
         auto result(uint64_t const index, bool const success, std::string_view const data) -> void;
 
         auto emit(std::string_view const event, std::string_view const data) -> void;
 
-        auto invoke(invoke_func_t&& callback) -> void;
+        auto invoke(invoke_func_t&& callback, void* context) -> void;
 
       protected:
-        MutexQueue<invoke_func_t> main_queue;
-        std::map<std::string, bind_func_t> callbacks;
+        MutexQueue<std::pair<invoke_func_t, void*>> main_queue;
+        std::map<std::string, std::pair<bind_func_t, void*>> callbacks;
     };
 } // namespace libwebview

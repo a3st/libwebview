@@ -116,7 +116,7 @@ namespace libwebview
         auto found = callbacks.find(func_name);
         if (found != callbacks.end())
         {
-            found->second(index, args_data);
+            found->second.first(index, args_data);
         }
 
         ::CoTaskMemFree(buffer);
@@ -402,7 +402,9 @@ namespace libwebview
 
             while (!main_queue.empty())
             {
-                main_queue.pop_front()();
+                auto element = main_queue.pop_front();
+                element.first();
+                delete element.second;
             }
         }
 

@@ -54,10 +54,12 @@ void webview_set_size_app(C_Webview instance, uint32_t const width, uint32_t con
 
 void webview_bind(C_Webview instance, char const* func, void (*callback)(void*, uint64_t, char const*), void* context)
 {
-    reinterpret_cast<Platform*>(instance)->bind(func,
-                                                [callback, context](uint64_t const index, std::string_view const data) {
-                                                    callback(context, index, data.data());
-                                                });
+    reinterpret_cast<Platform*>(instance)->bind(
+        func,
+        [callback, context](uint64_t const index, std::string_view const data) {
+            callback(context, index, data.data());
+        },
+        context);
 }
 
 void webview_result(C_Webview instance, uint64_t index, bool success, char const* data)
@@ -72,5 +74,5 @@ void webview_emit(C_Webview instance, char const* event, char const* data)
 
 void webview_invoke(C_Webview instance, void (*callback)(void*), void* context)
 {
-    reinterpret_cast<Platform*>(instance)->invoke([callback, context]() { callback(context); });
+    reinterpret_cast<Platform*>(instance)->invoke([callback, context]() { callback(context); }, context);
 }

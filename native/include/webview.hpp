@@ -80,10 +80,10 @@ namespace libwebview
             {
                 std::function<void()> callback;
             };
-            InvokedContext context{.callback = callback};
+            auto context = new InvokedContext{.callback = callback};
 
             webview_invoke(
-                app, [](void* context) { reinterpret_cast<InvokedContext*>(context)->callback(); }, &context);
+                app, [](void* context) { reinterpret_cast<InvokedContext*>(context)->callback(); }, context);
         }
 
         auto emit(std::string_view const event, std::string_view const data)
