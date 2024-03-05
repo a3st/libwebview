@@ -36,9 +36,10 @@ extern "C"
         \brief Application main loop
 
         \param instance pointer to application
-        \param url startup url path
+        \param url_path startup url path (if url starts with https:// or http:// app runs remote resource. Otherwise app
+       runs local resource eg. html file)
     */
-    LIB_WEBVIEW_API void webview_run_app(C_Webview instance, char const* url);
+    LIB_WEBVIEW_API void webview_run_app(C_Webview instance, char const* url_path);
 
     /*!
         \brief Quit application

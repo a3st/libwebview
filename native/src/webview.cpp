@@ -27,9 +27,9 @@ void webview_delete_app(C_Webview instance)
     delete instance;
 }
 
-void webview_run_app(C_Webview instance, char const* url)
+void webview_run_app(C_Webview instance, char const* url_path)
 {
-    reinterpret_cast<Platform*>(instance)->run(url);
+    reinterpret_cast<Platform*>(instance)->run(url_path);
 }
 
 void webview_quit_app(C_Webview instance)

@@ -22,7 +22,7 @@ class WebViewLib:
                     case _:
                         raise RuntimeError("Your system is not supported")
 
-                self.lib = cdll.LoadLibrary(os.path.join(LIB_PATH, "WebViewEdge.dll"))
+                self.lib = cdll.LoadLibrary(os.path.join(LIB_PATH, "libwebview_edge.dll"))
             case "Android":
                 self.lib = None
             case _:

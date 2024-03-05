@@ -17,13 +17,13 @@ class CMakeBuildExt(build_ext):
         self.build_temp = os.path.join(os.path.dirname(__file__), "build")
         os.makedirs(self.build_temp, exist_ok=True)
 
-        project_root = os.path.join(os.path.dirname(__file__), "..", "..", "native")
+        project_root = os.path.join(os.path.dirname(__file__), "..", "..")
 
         config = "Debug" if self.debug else "Release"
 
         match platform.system():
             case "Windows":
-                platform_type = "Edge"
+                platform_type = "edge"
                 arch_type = "x86_64"
 
         cmake_args = [
@@ -45,20 +45,18 @@ class CMakeBuildExt(build_ext):
             "--config",
             config,
             "--target",
-            ext.name + platform_type,
+            ext.name + "_" + platform_type,
         ]
 
         try:
             output = subprocess.check_output(
                 [
-                    os.path.abspath(
-                        os.path.join(
-                            "C:",
-                            "Program Files (x86)",
-                            "Microsoft Visual Studio",
-                            "Installer",
-                            "vswhere.exe",
-                        )
+                    os.path.join(
+                        "C:/",
+                        "Program Files (x86)",
+                        "Microsoft Visual Studio",
+                        "Installer",
+                        "vswhere.exe",
                     ),
                     "-products",
                     "*",
@@ -88,7 +86,7 @@ root_path = pathlib.Path(__file__).parent.resolve()
 setup(
     name="libwebview",
     packages=["libwebview"],
-    version="1.1.0",
+    version="1.1.1",
     author="Dmitriy Lukovenko",
     author_email="mludima23@gmail.com",
     description="Library for application development using WebView",
@@ -107,7 +105,7 @@ setup(
         "Documentation": "https://github.com/a3st/libwebview/wiki",
         "Source": "https://github.com/a3st/libwebview",
     },
-    ext_modules=[CMakeExtension("WebView")],
+    ext_modules=[CMakeExtension("libwebview")],
     cmdclass={"build_ext": CMakeBuildExt},
     include_package_data=True,
 )

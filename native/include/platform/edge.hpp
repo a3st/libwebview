@@ -26,7 +26,7 @@ namespace libwebview
 
         auto set_size(uint32_t const width, uint32_t const height) -> void override;
 
-        auto run(std::string_view const url) -> void override;
+        auto run(std::string_view const url_path) -> void override;
 
         auto execute_js(std::string_view const js) -> void override;
 

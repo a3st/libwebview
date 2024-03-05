@@ -28,7 +28,7 @@ namespace libwebview
 
         virtual auto set_size(uint32_t const width, uint32_t const height) -> void = 0;
 
-        virtual auto run(std::string_view const url) -> void = 0;
+        virtual auto run(std::string_view const url_path) -> void = 0;
 
         virtual auto execute_js(std::string_view const js) -> void = 0;
 

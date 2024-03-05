@@ -1,3 +1,5 @@
+#Copyright © 2022-2024 Dmitriy Lukovenko. All rights reserved.
+
 cmake_minimum_required(VERSION 3.25.3)
 project(libwebview VERSION 1.0.0)
 
@@ -64,15 +66,5 @@ target_compile_definitions(libwebview_edge_static PUBLIC
 )
 
 target_precompile_headers(libwebview_edge_static PRIVATE "include/precompiled.h")
-
-add_executable(test
-    "tests/cpp_test.cpp"
-)
-
-target_link_libraries(test
-    libwebview_edge_static
-)
-
-target_precompile_headers(test PRIVATE "include/precompiled.h")
 
 endif()

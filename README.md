@@ -31,9 +31,10 @@ app = App(
 app.set_max_size((0, 0))
 app.set_min_size((500, 400))
 
-@app.route
 def window_close():
     app.quit()
+
+app.bind(window_close)
 
 app.run("resources/index.html")
 ```

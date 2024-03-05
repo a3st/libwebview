@@ -269,7 +269,7 @@ namespace libwebview
                        height * static_cast<uint32_t>(scale) / 100, SWP_NOMOVE);
     }
 
-    auto Edge::run(std::string_view const url) -> void
+    auto Edge::run(std::string_view const url_path) -> void
     {
         std::wstring js = LR"(
         class Queue {
@@ -364,7 +364,17 @@ namespace libwebview
     )";
 
         THROW_IF_FAILED(webview->AddScriptToExecuteOnDocumentCreated(js.c_str(), nullptr));
-        THROW_IF_FAILED(webview->Navigate(internal::to_wstring(url).c_str()));
+
+        if (url_path.starts_with("http://") || url_path.starts_with("https://"))
+        {
+            THROW_IF_FAILED(webview->Navigate(internal::to_wstring(url_path).c_str()));
+        }
+        else
+        {
+            auto current_path = std::filesystem::current_path();
+            THROW_IF_FAILED(webview->Navigate(
+                internal::to_wstring("file:///" + (current_path / url_path).generic_string()).c_str()));
+        }
 
         auto msg = MSG{};
         bool running = true;

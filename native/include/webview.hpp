@@ -32,9 +32,9 @@ namespace libwebview
             webview_quit_app(app);
         }
 
-        auto run(std::string_view const url) -> void
+        auto run(std::string_view const url_path) -> void
         {
-            webview_run_app(app, std::string(url).c_str());
+            webview_run_app(app, std::string(url_path).c_str());
         }
 
         auto set_size(uint32_t const width, uint32_t const height) -> void
