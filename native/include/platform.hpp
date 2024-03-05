@@ -34,7 +34,7 @@ namespace libwebview
 
         virtual auto quit() -> void = 0;
 
-        auto bind(std::string_view const name, bind_func_t&& callback) -> void;
+        auto bind(std::string_view const func, bind_func_t&& callback) -> void;
 
         auto result(uint64_t const index, bool const success, std::string_view const data) -> void;
 

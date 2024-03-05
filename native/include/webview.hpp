@@ -3,9 +3,15 @@
 #pragma once
 
 #include "webview.h"
+#include <nlohmann/json.hpp>
 
 namespace libwebview
 {
+    struct EventArgs
+    {
+        uint64_t index;
+    };
+
     class App
     {
       public:
@@ -47,9 +53,47 @@ namespace libwebview
         }
 
         template <typename... Args>
-        auto bind(std::string_view const name, std::function<void(Args...)>&& callback)
+        auto bind(std::string_view const name, std::function<void(EventArgs const&, Args...)>&& callback)
         {
-            // webview_bind(app, std::string(name).c_str(), )
+            struct BindedContext
+            {
+                std::function<void(EventArgs const&, Args...)> callback;
+            };
+            auto context = new BindedContext{.callback = callback};
+
+            webview_bind(
+                app, std::string(name).c_str(),
+                [](void* context, uint64_t const index, char const* data) {
+                    auto args_data = nlohmann::json::parse(data);
+                    auto invoke_helper = [&]<size_t... I>(nlohmann::json_abi_v3_11_2::json const& data,
+                                                          std::index_sequence<I...>) {
+                        reinterpret_cast<BindedContext*>(context)->callback(EventArgs{.index = index}, data[I]...);
+                    };
+                    invoke_helper(args_data, std::index_sequence_for<Args...>{});
+                },
+                context);
+        }
+
+        auto invoke(std::function<void()>&& callback)
+        {
+            struct InvokedContext
+            {
+                std::function<void()> callback;
+            };
+            InvokedContext context{.callback = callback};
+
+            webview_invoke(
+                app, [](void* context) { reinterpret_cast<InvokedContext*>(context)->callback(); }, &context);
+        }
+
+        auto emit(std::string_view const event, std::string_view const data)
+        {
+            webview_emit(app, std::string(event).c_str(), std::string(data).c_str());
+        }
+
+        auto result(uint64_t const index, bool const success, std::string_view const data)
+        {
+            webview_result(app, index, success, std::string(data).c_str());
         }
 
       private:

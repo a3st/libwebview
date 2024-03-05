@@ -46,7 +46,6 @@ namespace libwebview
         EventRegistrationToken token;
 
         bool is_initialized;
-        DWORD main_thread_id;
         std::binary_semaphore semaphore;
 
         static auto window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT;

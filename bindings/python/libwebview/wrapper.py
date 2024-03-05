@@ -9,6 +9,8 @@ class WebViewLib:
         None, ctypes.c_void_p, ctypes.c_uint64, ctypes.c_char_p
     )
 
+    INVOKE_FUNC_T = ctypes.CFUNCTYPE(None, ctypes.c_void_p)
+
     def __init__(self):
         LIB_WEBVIEW_DIR = os.path.dirname(__file__)
 
@@ -81,6 +83,12 @@ class WebViewLib:
             ctypes.c_char_p,
         ]
 
+        self.lib.webview_invoke.argtypes = [
+            ctypes.c_void_p,
+            WebViewLib.INVOKE_FUNC_T,
+            ctypes.c_void_p,
+        ]
+
         self.webview_create_app = self.lib.webview_create_app
         self.webview_delete_app = self.lib.webview_delete_app
         self.webview_run_app = self.lib.webview_run_app
@@ -91,3 +99,4 @@ class WebViewLib:
         self.webview_bind = self.lib.webview_bind
         self.webview_result = self.lib.webview_result
         self.webview_emit = self.lib.webview_emit
+        self.webview_invoke = self.lib.webview_invoke

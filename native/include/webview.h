@@ -77,10 +77,10 @@ extern "C"
         \brief Bind function for call from JS
 
         \param instance pointer to application
-        \param name a function name
+        \param func a function name
         \param callback a binded callback (context, index, data) -> void
     */
-    LIB_WEBVIEW_API void webview_bind(C_Webview instance, char const* name,
+    LIB_WEBVIEW_API void webview_bind(C_Webview instance, char const* func,
                                       void (*callback)(void*, uint64_t, char const*), void* context);
 
     /*!

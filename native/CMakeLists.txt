@@ -8,7 +8,7 @@ set(CMAKE_C_STANDARD 11)
 if(WIN32)
 
 add_library(libwebview_edge SHARED
-    "src/platform/platform.cpp"
+    "src/platform.cpp"
     "src/platform/edge.cpp"
     "src/webview.cpp"
 )
@@ -37,7 +37,7 @@ target_compile_definitions(libwebview_edge PUBLIC
 target_precompile_headers(libwebview_edge PRIVATE "include/precompiled.h")
 
 add_library(libwebview_edge_static STATIC
-    "src/platform/platform.cpp"
+    "src/platform.cpp"
     "src/platform/edge.cpp"
     "src/webview.cpp"
 )

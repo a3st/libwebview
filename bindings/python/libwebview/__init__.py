@@ -1,5 +1,4 @@
 import json
-import os
 from .wrapper import WebViewLib
 
 lib = WebViewLib()
@@ -44,7 +43,10 @@ class App:
         data = json.dumps(args)
         lib.webview_emit(self.instance, event.encode(), data.encode())
 
-    def route(self, func):
+    def invoke(self, func):
+        lib.webview_invoke(self.instance, WebViewLib.INVOKE_FUNC_T(lambda ctx: func()))
+
+    def bind(self, func):
         def wrapper(ctx, index, args):
             data = json.loads(args)
 
@@ -71,9 +73,6 @@ class App:
         lib.webview_bind(
             self.instance, func.__name__.encode(), self.callbacks[-1], None
         )
-        return wrapper
 
-    def run(self, file_path: str):
-        lib.webview_run_app(
-            self.instance, ("file:///" + os.getcwd() + "/" + file_path).encode()
-        )
+    def run(self, url: str):
+        lib.webview_run_app(self.instance, url.encode())

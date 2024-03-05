@@ -94,11 +94,11 @@ namespace libwebview
             ::UpdateWindow(window);
             ::SetFocus(window);
 
-            controller->put_IsVisible(TRUE);
+            THROW_IF_FAILED(controller->put_IsVisible(TRUE));
 
             auto rect = RECT{};
             ::GetClientRect(window, &rect);
-            controller->put_Bounds(rect);
+            THROW_IF_FAILED(controller->put_Bounds(rect));
         }
         return S_OK;
     }
@@ -125,7 +125,7 @@ namespace libwebview
 
     Edge::Edge(std::string_view const app_name, std::string_view const title, uint32_t const width,
                uint32_t const height, bool const resizeable, bool const debug_mode)
-        : is_initialized(false), semaphore(0), main_thread_id(::GetCurrentThreadId())
+        : is_initialized(false), semaphore(0)
     {
         THROW_IF_FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
         THROW_IF_FAILED(::SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE));

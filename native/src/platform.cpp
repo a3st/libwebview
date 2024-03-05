@@ -1,6 +1,6 @@
 // Copyright © 2022-2024 Dmitriy Lukovenko. All rights reserved.
 
-#include "platform/platform.hpp"
+#include "platform.hpp"
 #include "precompiled.h"
 
 #ifdef LIB_WEBVIEW_EDGE
@@ -27,13 +27,13 @@ namespace libwebview
         return platform;
     }
 
-    auto Platform::bind(std::string_view const name, bind_func_t&& callback) -> void
+    auto Platform::bind(std::string_view const func, bind_func_t&& callback) -> void
     {
-        if (callbacks.find(std::string(name)) != callbacks.end())
+        if (callbacks.find(std::string(func)) != callbacks.end())
         {
             throw std::runtime_error("Cannot to bind a function that already exists");
         }
-        callbacks.insert({std::string(name), std::move(callback)});
+        callbacks.insert({std::string(func), std::move(callback)});
     }
 
     auto Platform::result(uint64_t const index, bool const success, std::string_view const data) -> void
