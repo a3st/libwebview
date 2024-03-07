@@ -8,6 +8,7 @@ namespace libwebview
 {
     using invoke_func_t = std::function<void()>;
     using bind_func_t = std::function<void(uint64_t const, std::string_view const)>;
+    using idle_func_t = std::function<void()>;
 
     enum class PlatformType
     {
@@ -42,8 +43,11 @@ namespace libwebview
 
         auto invoke(invoke_func_t&& callback, void* context) -> void;
 
+        auto set_idle(idle_func_t&& callback, void* context) -> void;
+
       protected:
         MutexQueue<std::pair<invoke_func_t, void*>> main_queue;
         std::map<std::string, std::pair<bind_func_t, void*>> callbacks;
+        std::pair<idle_func_t, void*> idle;
     };
 } // namespace libwebview

@@ -67,4 +67,14 @@ namespace libwebview
     {
         main_queue.push(std::make_pair(std::move(callback), context));
     }
+
+    auto Platform::set_idle(idle_func_t&& callback, void* context) -> void
+    {
+        if (idle.first && idle.second)
+        {
+            delete idle.second;
+        }
+
+        idle = std::make_pair(std::move(callback), context);
+    }
 } // namespace libwebview

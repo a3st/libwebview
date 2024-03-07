@@ -12,7 +12,11 @@ namespace libwebview
 
         auto pop_front() -> Type
         {
-            std::lock_guard lock(mutex);
+            std::unique_lock lock(mutex);
+            while (queue.empty())
+            {
+                condition.wait(lock);
+            }
             Type element = std::move(queue.front());
             queue.pop();
             return element;
@@ -22,15 +26,24 @@ namespace libwebview
         {
             std::lock_guard lock(mutex);
             queue.push(std::move(element));
+            condition.notify_one();
         }
 
         auto empty() const -> bool
         {
+            std::lock_guard lock(mutex);
             return queue.empty();
         }
 
+        auto size() const -> size_t
+        {
+            std::lock_guard lock(mutex);
+            return queue.size();
+        }
+
       private:
-        std::mutex mutex;
+        mutable std::mutex mutex;
         std::queue<Type> queue;
+        std::condition_variable condition;
     };
 } // namespace libwebview

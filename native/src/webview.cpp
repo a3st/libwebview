@@ -76,3 +76,8 @@ void webview_invoke(C_Webview instance, void (*callback)(void*), void* context)
 {
     reinterpret_cast<Platform*>(instance)->invoke([callback, context]() { callback(context); }, context);
 }
+
+void webview_set_idle(C_Webview instance, void (*callback)(void*), void* context)
+{
+    reinterpret_cast<Platform*>(instance)->set_idle([callback, context]() { callback(context); }, context);
+}

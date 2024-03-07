@@ -323,7 +323,7 @@ namespace libwebview
         }
 
         class WebView {
-            static MAX_RESULTS = 100;
+            static MAX_RESULTS = 100000;
 
             constructor() {
                 this.results = {};
@@ -405,6 +405,11 @@ namespace libwebview
                 auto element = main_queue.pop_front();
                 element.first();
                 delete element.second;
+            }
+
+            if (idle.first)
+            {
+                idle.first();
             }
         }
 

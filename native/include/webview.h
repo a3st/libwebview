@@ -57,8 +57,9 @@ extern "C"
     */
     LIB_WEBVIEW_API void webview_set_max_size_app(C_Webview instance, uint32_t const width, uint32_t const height);
 
-    //! Set min application window size
     /*!
+        \brief Set min application window size
+
         \param instance pointer to application
         \param width a min window width
         \param height a min window height
@@ -110,4 +111,12 @@ extern "C"
         \param callback a invoke callback (context) -> void
     */
     LIB_WEBVIEW_API void webview_invoke(C_Webview instance, void (*callback)(void*), void* context);
+
+    /*!
+        \brief Set application idle function
+
+        \param instance pointer to application
+        \param callback a idle callback (context)
+    */
+    LIB_WEBVIEW_API void webview_set_idle(C_Webview instance, void (*callback)(void*), void* context);
 }

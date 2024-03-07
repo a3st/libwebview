@@ -74,6 +74,22 @@ namespace libwebview
                 context);
         }
 
+        auto bind(std::string_view const name, std::function<void(EventArgs const&)>&& callback)
+        {
+            struct BindedContext
+            {
+                std::function<void(EventArgs const&)> callback;
+            };
+            auto context = new BindedContext{.callback = callback};
+
+            webview_bind(
+                app, std::string(name).c_str(),
+                [](void* context, uint64_t const index, char const* data) {
+                    reinterpret_cast<BindedContext*>(context)->callback(EventArgs{.index = index});
+                },
+                context);
+        }
+
         auto invoke(std::function<void()>&& callback)
         {
             struct InvokedContext
@@ -94,6 +110,18 @@ namespace libwebview
         auto result(uint64_t const index, bool const success, std::string_view const data)
         {
             webview_result(app, index, success, std::string(data).c_str());
+        }
+
+        auto idle(std::function<void()>&& callback)
+        {
+            struct BindedContext
+            {
+                std::function<void()> callback;
+            };
+            auto context = new BindedContext{.callback = callback};
+
+            webview_set_idle(
+                app, [](void* context) { reinterpret_cast<BindedContext*>(context)->callback(); }, context);
         }
 
       private:
