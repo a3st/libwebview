@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "mutex_queue.hpp"
+#include "concurrent_queue.hpp"
 
 namespace libwebview
 {
@@ -37,6 +37,8 @@ namespace libwebview
 
         auto bind(std::string_view const func, bind_func_t&& callback, void* context) -> void;
 
+        auto unbind(std::string_view const func) -> void;
+
         auto result(uint64_t const index, bool const success, std::string_view const data) -> void;
 
         auto emit(std::string_view const event, std::string_view const data) -> void;
@@ -46,7 +48,7 @@ namespace libwebview
         auto set_idle(idle_func_t&& callback, void* context) -> void;
 
       protected:
-        MutexQueue<std::pair<invoke_func_t, void*>> main_queue;
+        ConcurrentQueue<std::pair<invoke_func_t, void*>> main_queue;
         std::map<std::string, std::pair<bind_func_t, void*>> callbacks;
         std::pair<idle_func_t, void*> idle;
     };

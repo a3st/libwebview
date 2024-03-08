@@ -13,7 +13,7 @@ namespace libwebview
                           uint32_t const height, bool const resizeable, bool const debug_mode,
                           PlatformType const platform_type) -> Platform*
     {
-        Platform* platform;
+        Platform* platform = nullptr;
         switch (platform_type)
         {
             case PlatformType::Edge: {
@@ -34,6 +34,17 @@ namespace libwebview
             throw std::runtime_error("Cannot to bind a function that already exists");
         }
         callbacks.insert({std::string(func), std::make_pair(std::move(callback), context)});
+    }
+
+    auto Platform::unbind(std::string_view const func) -> void
+    {
+        auto result = callbacks.find(std::string(func));
+        if (result == callbacks.end())
+        {
+            throw std::runtime_error("Cannot to unbind a function that no exists");
+        }
+        delete result->second.second;
+        callbacks.erase(result);
     }
 
     auto Platform::result(uint64_t const index, bool const success, std::string_view const data) -> void

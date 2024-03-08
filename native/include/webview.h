@@ -39,7 +39,7 @@ extern "C"
         \param url_path startup url path (if url starts with https:// or http:// app runs remote resource. Otherwise app
        runs local resource eg. html file)
     */
-    LIB_WEBVIEW_API void webview_run_app(C_Webview instance, char const* url_path);
+    LIB_WEBVIEW_API bool webview_run_app(C_Webview instance, char const* url_path);
 
     /*!
         \brief Quit application
@@ -82,8 +82,16 @@ extern "C"
         \param func a function name
         \param callback a binded callback (context, index, data) -> void
     */
-    LIB_WEBVIEW_API void webview_bind(C_Webview instance, char const* func,
+    LIB_WEBVIEW_API bool webview_bind(C_Webview instance, char const* func,
                                       void (*callback)(void*, uint64_t, char const*), void* context);
+
+    /*!
+        \brief Unbind function for call from JS
+
+        \param instance pointer to application
+        \param func a function name
+    */
+    LIB_WEBVIEW_API bool webview_unbind(C_Webview instance, char const* func);
 
     /*!
         \brief Return result to JS function

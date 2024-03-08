@@ -27,9 +27,17 @@ void webview_delete_app(C_Webview instance)
     delete instance;
 }
 
-void webview_run_app(C_Webview instance, char const* url_path)
+bool webview_run_app(C_Webview instance, char const* url_path)
 {
-    reinterpret_cast<Platform*>(instance)->run(url_path);
+    try
+    {
+        reinterpret_cast<Platform*>(instance)->run(url_path);
+        return true;
+    }
+    catch (std::runtime_error e)
+    {
+        return false;
+    }
 }
 
 void webview_quit_app(C_Webview instance)
@@ -52,14 +60,35 @@ void webview_set_size_app(C_Webview instance, uint32_t const width, uint32_t con
     reinterpret_cast<Platform*>(instance)->set_size(width, height);
 }
 
-void webview_bind(C_Webview instance, char const* func, void (*callback)(void*, uint64_t, char const*), void* context)
+bool webview_bind(C_Webview instance, char const* func, void (*callback)(void*, uint64_t, char const*), void* context)
 {
-    reinterpret_cast<Platform*>(instance)->bind(
-        func,
-        [callback, context](uint64_t const index, std::string_view const data) {
-            callback(context, index, data.data());
-        },
-        context);
+    try
+    {
+        reinterpret_cast<Platform*>(instance)->bind(
+            func,
+            [callback, context](uint64_t const index, std::string_view const data) {
+                callback(context, index, data.data());
+            },
+            context);
+        return true;
+    }
+    catch (std::runtime_error e)
+    {
+        return false;
+    }
+}
+
+bool webview_unbind(C_Webview instance, char const* func)
+{
+    try
+    {
+        reinterpret_cast<Platform*>(instance)->unbind(func);
+        return true;
+    }
+    catch (std::runtime_error e)
+    {
+        return false;
+    }
 }
 
 void webview_result(C_Webview instance, uint64_t index, bool success, char const* data)

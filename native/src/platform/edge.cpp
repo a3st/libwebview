@@ -381,7 +381,7 @@ namespace libwebview
 
         while (running)
         {
-            while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+            if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
             {
                 switch (msg.message)
                 {
@@ -399,17 +399,19 @@ namespace libwebview
                     }
                 }
             }
-
-            while (!main_queue.empty())
+            else
             {
-                auto element = main_queue.pop_front();
-                element.first();
-                delete element.second;
-            }
+                while (!main_queue.empty())
+                {
+                    auto element = main_queue.pop_front();
+                    element.first();
+                    delete element.second;
+                }
 
-            if (idle.first)
-            {
-                idle.first();
+                if (idle.first)
+                {
+                    idle.first();
+                }
             }
         }
 

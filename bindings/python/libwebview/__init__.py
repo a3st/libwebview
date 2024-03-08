@@ -13,7 +13,7 @@ class App:
         resizeable: bool = False,
         debug_mode: bool = True,
     ):
-        self.callbacks = []
+        self.callbacks = {}
 
         width, height = size
 
@@ -46,7 +46,7 @@ class App:
     def invoke(self, func):
         lib.webview_invoke(self.instance, WebViewLib.INVOKE_FUNC_T(lambda ctx: func()))
 
-    def bind(self, func):
+    def bind(self, func) -> bool:
         def wrapper(ctx, index, args):
             data = json.loads(args)
 
@@ -66,13 +66,16 @@ class App:
                 data = json.dumps({"error": str(e)})
                 lib.webview_result(self.instance, index, False, data.encode())
 
-        self.callbacks.append(
-            WebViewLib.BIND_FUNC_T(lambda ctx, index, args: wrapper(ctx, index, args))
+        self.callbacks[func.__name__] = WebViewLib.BIND_FUNC_T(
+            lambda ctx, index, args: wrapper(ctx, index, args)
         )
 
-        lib.webview_bind(
-            self.instance, func.__name__.encode(), self.callbacks[-1], None
+        return lib.webview_bind(
+            self.instance, func.__name__.encode(), self.callbacks[func.__name__], None
         )
 
-    def run(self, url: str):
-        lib.webview_run_app(self.instance, url.encode())
+    def unbind(self, func) -> bool:
+        return lib.webview_unbind(self.instance, func.__name__)
+
+    def run(self, url: str) -> bool:
+        return lib.webview_run_app(self.instance, url.encode())

@@ -32,9 +32,9 @@ namespace libwebview
             webview_quit_app(app);
         }
 
-        auto run(std::string_view const url_path) -> void
+        auto run(std::string_view const url_path) -> bool
         {
-            webview_run_app(app, std::string(url_path).c_str());
+            return webview_run_app(app, std::string(url_path).c_str());
         }
 
         auto set_size(uint32_t const width, uint32_t const height) -> void
@@ -53,7 +53,7 @@ namespace libwebview
         }
 
         template <typename... Args>
-        auto bind(std::string_view const name, std::function<void(EventArgs const&, Args...)>&& callback)
+        auto bind(std::string_view const name, std::function<void(EventArgs const&, Args...)>&& callback) -> bool
         {
             struct BindedContext
             {
@@ -61,7 +61,7 @@ namespace libwebview
             };
             auto context = new BindedContext{.callback = callback};
 
-            webview_bind(
+            return webview_bind(
                 app, std::string(name).c_str(),
                 [](void* context, uint64_t const index, char const* data) {
                     auto args_data = nlohmann::json::parse(data);
@@ -74,7 +74,7 @@ namespace libwebview
                 context);
         }
 
-        auto bind(std::string_view const name, std::function<void(EventArgs const&)>&& callback)
+        auto bind(std::string_view const name, std::function<void(EventArgs const&)>&& callback) -> bool
         {
             struct BindedContext
             {
@@ -82,7 +82,7 @@ namespace libwebview
             };
             auto context = new BindedContext{.callback = callback};
 
-            webview_bind(
+            return webview_bind(
                 app, std::string(name).c_str(),
                 [](void* context, uint64_t const index, char const* data) {
                     reinterpret_cast<BindedContext*>(context)->callback(EventArgs{.index = index});
@@ -90,7 +90,12 @@ namespace libwebview
                 context);
         }
 
-        auto invoke(std::function<void()>&& callback)
+        auto unbind(std::string_view const name) -> bool
+        {
+            return webview_unbind(app, std::string(name).c_str());
+        }
+
+        auto invoke(std::function<void()>&& callback) -> void
         {
             struct InvokedContext
             {
@@ -102,17 +107,17 @@ namespace libwebview
                 app, [](void* context) { reinterpret_cast<InvokedContext*>(context)->callback(); }, context);
         }
 
-        auto emit(std::string_view const event, std::string_view const data)
+        auto emit(std::string_view const event, std::string_view const data) -> void
         {
             webview_emit(app, std::string(event).c_str(), std::string(data).c_str());
         }
 
-        auto result(uint64_t const index, bool const success, std::string_view const data)
+        auto result(uint64_t const index, bool const success, std::string_view const data) -> void
         {
             webview_result(app, index, success, std::string(data).c_str());
         }
 
-        auto idle(std::function<void()>&& callback)
+        auto idle(std::function<void()>&& callback) -> void
         {
             struct BindedContext
             {

@@ -5,10 +5,10 @@
 namespace libwebview
 {
     template <typename Type>
-    class MutexQueue
+    class ConcurrentQueue
     {
       public:
-        MutexQueue() = default;
+        ConcurrentQueue() = default;
 
         auto pop_front() -> Type
         {
