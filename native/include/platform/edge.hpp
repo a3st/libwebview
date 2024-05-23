@@ -3,9 +3,11 @@
 #pragma once
 
 #include "platform.hpp"
+
+#define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
-#undef NOMINMAX
+
 #include <ShellScalingApi.h>
 #include <dwmapi.h>
 #include <webview2/WebView2.h>
@@ -17,41 +19,46 @@ namespace libwebview
     class Edge final : public Platform
     {
       public:
-        Edge(std::string_view const app_name, std::string_view const title, uint32_t const width, uint32_t const height,
-             bool const resizeable, bool const debug_mode);
+        Edge(std::string_view const appName, std::string_view const title, uint32_t const width, uint32_t const height,
+             bool const resizeable, bool const debugMode);
 
-        auto set_max_size(uint32_t const width, uint32_t const height) -> void override;
+        auto setWindowMaxSize(uint32_t const width, uint32_t const height) -> void override;
 
-        auto set_min_size(uint32_t const width, uint32_t const height) -> void override;
+        auto setWindowMinSize(uint32_t const width, uint32_t const height) -> void override;
 
-        auto set_size(uint32_t const width, uint32_t const height) -> void override;
+        auto setWindowSize(uint32_t const width, uint32_t const height) -> void override;
 
-        auto run(std::string_view const url_path) -> void override;
+        auto run(std::string_view const urlPath) -> void override;
 
-        auto execute_js(std::string_view const js) -> void override;
+        auto executeJavaScript(std::string_view const executeCode) -> void override;
 
         auto quit() -> void override;
 
       private:
         HWND window;
-        DEVICE_SCALE_FACTOR scale;
-        uint32_t min_window_width{1};
-        uint32_t min_window_height{1};
-        uint32_t max_window_width{0};
-        uint32_t max_window_height{0};
+        DEVICE_SCALE_FACTOR scaleFactor;
+
+        struct WindowSize
+        {
+            uint32_t width;
+            uint32_t height;
+        };
+
+        WindowSize minSize;
+        WindowSize maxSize;
 
         winrt::com_ptr<ICoreWebView2Environment> environment;
         winrt::com_ptr<ICoreWebView2Controller> controller;
         winrt::com_ptr<ICoreWebView2> webview;
-        EventRegistrationToken token;
-
-        bool is_initialized;
+        EventRegistrationToken eventToken;
+        bool isInitialized;
         std::binary_semaphore semaphore;
 
-        static auto window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT;
+        static auto windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT;
 
-        auto navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT;
+        auto webviewNavigationComplete(ICoreWebView2* sender,
+                                       ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT;
 
-        auto web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT;
+        auto webviewMessageReceived(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT;
     };
 } // namespace libwebview

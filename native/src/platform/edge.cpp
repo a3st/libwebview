@@ -4,51 +4,46 @@
 #include "precompiled.h"
 #include <wrl/event.h>
 using namespace Microsoft::WRL;
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
-
-#define THROW_IF_FAILED(HRESULT)                                                                                       \
-    if (FAILED(HRESULT))                                                                                               \
-    {                                                                                                                  \
-        throw std::runtime_error(                                                                                      \
-            std::format("An error occurred while processing the WINAPI (HRESULT: {:04x})", HRESULT));                  \
-    }
 
 namespace libwebview
 {
+    auto throwIfFailed(HRESULT hr) -> void
+    {
+        if (FAILED(hr))
+        {
+            throw std::runtime_error(std::format("The program closed with an error {:04x}", hr));
+        }
+    }
+
     namespace internal
     {
-        auto to_wstring(std::string_view const source) -> std::wstring
+        auto toWstring(std::string_view const source) -> std::wstring
         {
             int32_t length =
                 ::MultiByteToWideChar(CP_UTF8, 0, source.data(), static_cast<int32_t>(source.size()), nullptr, 0);
-
             std::wstring dest(length, '\0');
-
             ::MultiByteToWideChar(CP_UTF8, 0, source.data(), static_cast<int32_t>(source.size()), dest.data(), length);
             return dest;
         }
 
-        auto to_string(std::wstring_view const source) -> std::string
+        auto toString(std::wstring_view const source) -> std::string
         {
             int32_t length = WideCharToMultiByte(CP_UTF8, 0, source.data(), static_cast<int32_t>(source.size()),
                                                  nullptr, 0, nullptr, nullptr);
-
             std::string dest(length, '\0');
-
             WideCharToMultiByte(CP_UTF8, 0, source.data(), static_cast<int32_t>(source.size()), dest.data(),
                                 static_cast<int32_t>(dest.size()), nullptr, nullptr);
             return dest;
         }
     } // namespace internal
 
-    auto Edge::window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT
+    auto Edge::windowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT
     {
-        auto window = reinterpret_cast<Edge*>(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        auto windowInstance = reinterpret_cast<Edge*>(::GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
-        if (!window)
+        if (!windowInstance)
         {
-            return ::DefWindowProc(hwnd, msg, wparam, lparam);
+            return ::DefWindowProc(hWnd, msg, wParam, lParam);
         }
 
         switch (msg)
@@ -58,30 +53,31 @@ namespace libwebview
                 break;
             }
             case WM_SIZE: {
-                if (!window->controller)
+                if (!windowInstance->controller)
                 {
                     return 0;
                 }
 
                 auto rect = RECT{};
-                ::GetClientRect(window->window, &rect);
-                window->controller->put_Bounds(rect);
+                ::GetClientRect(windowInstance->window, &rect);
+                windowInstance->controller->put_Bounds(rect);
                 break;
             }
             case WM_GETMINMAXINFO: {
-                MINMAXINFO* mmi = (MINMAXINFO*)lparam;
-                mmi->ptMinTrackSize.x = window->min_window_width;
-                mmi->ptMinTrackSize.y = window->min_window_height;
+                MINMAXINFO* mmi = (MINMAXINFO*)lParam;
+                mmi->ptMinTrackSize.x = windowInstance->minSize.width;
+                mmi->ptMinTrackSize.y = windowInstance->minSize.height;
 
-                if (std::make_tuple(window->max_window_width, window->max_window_height) != std::make_tuple(0u, 0u))
+                if (std::make_tuple(windowInstance->maxSize.width, windowInstance->maxSize.height) !=
+                    std::make_tuple(0u, 0u))
                 {
-                    mmi->ptMaxTrackSize.x = window->max_window_width;
-                    mmi->ptMaxTrackSize.y = window->max_window_height;
+                    mmi->ptMaxTrackSize.x = windowInstance->maxSize.width;
+                    mmi->ptMaxTrackSize.y = windowInstance->maxSize.height;
                 }
                 return 0;
             }
         }
-        return ::DefWindowProc(hwnd, msg, wparam, lparam);
+        return ::DefWindowProc(hWnd, msg, wParam, lParam);
     }
 
     auto Edge::navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT

@@ -2,9 +2,6 @@
 
 #pragma once
 
-#include "webview.h"
-#include <nlohmann/json.hpp>
-
 namespace libwebview
 {
     struct EventArgs

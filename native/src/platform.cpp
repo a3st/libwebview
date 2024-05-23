@@ -1,6 +1,7 @@
 // Copyright © 2022-2024 Dmitriy Lukovenko. All rights reserved.
 
 #include "platform.hpp"
+#include "injection.hpp"
 #include "precompiled.h"
 
 #ifdef LIB_WEBVIEW_EDGE
@@ -9,10 +10,11 @@
 
 namespace libwebview
 {
-    auto Platform::create(std::string_view const app_name, std::string_view const title, uint32_t const width,
-                          uint32_t const height, bool const resizeable, bool const debug_mode,
-                          PlatformType const platform_type) -> Platform*
+    auto Platform::createInstance(std::string_view const appName, std::string_view const title, uint32_t const width,
+                                  uint32_t const height, bool const resizeable,
+                                  bool const debugMode) -> std::unique_ptr<Platform>
     {
+<<<<<<< Updated upstream
         Platform* platform = nullptr;
         switch (platform_type)
         {
@@ -28,11 +30,23 @@ namespace libwebview
     }
 
     auto Platform::bind(std::string_view const func, bind_func_t&& callback, void* context) -> void
+=======
+#ifdef LIB_WEBVIEW_EDGE
+        return std::make_unique<Edge>(appName, title, width, height, resizeable, debugMode);
+#else
+#error libwebview target platform is not defined
+        return nullptr;
+#endif
+    }
+
+    auto Platform::bind(std::string_view const functionName, bind_func_t&& callback) -> void
+>>>>>>> Stashed changes
     {
-        if (callbacks.find(std::string(func)) != callbacks.end())
+        if (callbacks.find(std::string(functionName)) != callbacks.end())
         {
             throw std::runtime_error("Cannot to bind a function that already exists");
         }
+<<<<<<< Updated upstream
         callbacks.insert({std::string(func), std::make_pair(std::move(callback), context)});
     }
 
@@ -45,19 +59,23 @@ namespace libwebview
         }
         delete result->second.second;
         callbacks.erase(result);
+=======
+        callbacks.emplace(std::string(functionName), std::move(callback));
+>>>>>>> Stashed changes
     }
 
     auto Platform::result(uint64_t const index, bool const success, std::string_view const data) -> void
     {
-        std::string js;
+        std::string executeCode;
         if (success)
         {
-            js = std::format("webview.results[{0}].resolve({1}); webview.__free_result({0});", index, data);
+            executeCode = js::onResultResolveInjection;
         }
         else
         {
-            js = std::format("webview.results[{0}].reject({1}); webview.__free_result({0});", index, data);
+            executeCode = js::onResultRejectInjection;
         }
+<<<<<<< Updated upstream
         execute_js(js);
     }
 
@@ -87,5 +105,8 @@ namespace libwebview
         }
 
         idle = std::make_pair(std::move(callback), context);
+=======
+        this->executeJavaScript(std::format(executeCode, index, data));
+>>>>>>> Stashed changes
     }
 } // namespace libwebview

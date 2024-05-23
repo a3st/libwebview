@@ -10,61 +10,51 @@ set(CMAKE_C_STANDARD 11)
 if(WIN32)
 
 add_library(libwebview_edge SHARED
-    "src/platform.cpp"
-    "src/platform/edge.cpp"
-    "src/webview.cpp"
-)
+    src/platform.cpp
+    src/platform/edge.cpp
+    src/webview.cpp)
 
 target_include_directories(libwebview_edge PUBLIC
-    "${PROJECT_SOURCE_DIR}/src"
-    "${PROJECT_SOURCE_DIR}/include"
-    "${PROJECT_SOURCE_DIR}/thirdparty/json/include"
-    "${PROJECT_SOURCE_DIR}/thirdparty/webview2/include"
-)
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/thirdparty/json/include
+    ${PROJECT_SOURCE_DIR}/thirdparty/webview2/include)
 
 target_link_directories(libwebview_edge PRIVATE
-    "${PROJECT_SOURCE_DIR}/thirdparty/webview2/lib/x86_64"
-)
+    ${PROJECT_SOURCE_DIR}/thirdparty/webview2/lib/x86_64)
 
 target_link_libraries(libwebview_edge PUBLIC
     dwmapi.lib
     WebView2LoaderStatic.lib
-    shcore.lib
-)
+    shcore.lib)
 
 target_compile_definitions(libwebview_edge PUBLIC
-    LIB_WEBVIEW_EDGE
-)
+    LIB_WEBVIEW_EDGE)
 
-target_precompile_headers(libwebview_edge PRIVATE "include/precompiled.h")
+target_precompile_headers(libwebview_edge PRIVATE include/precompiled.h)
 
 add_library(libwebview_edge_static STATIC
-    "src/platform.cpp"
-    "src/platform/edge.cpp"
-    "src/webview.cpp"
-)
+    src/platform.cpp
+    src/platform/edge.cpp
+    src/webview.cpp)
 
 target_include_directories(libwebview_edge_static PUBLIC
-    "${PROJECT_SOURCE_DIR}/src"
-    "${PROJECT_SOURCE_DIR}/include"
-    "${PROJECT_SOURCE_DIR}/thirdparty/json/include"
-    "${PROJECT_SOURCE_DIR}/thirdparty/webview2/include"
-)
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/thirdparty/json/include
+    ${PROJECT_SOURCE_DIR}/thirdparty/webview2/include)
 
 target_link_directories(libwebview_edge_static PUBLIC
-    "${PROJECT_SOURCE_DIR}/thirdparty/webview2/lib/x86_64"
-)
+    ${PROJECT_SOURCE_DIR}/thirdparty/webview2/lib/x86_64)
 
 target_link_libraries(libwebview_edge_static PUBLIC
     dwmapi.lib
     WebView2LoaderStatic.lib
-    shcore.lib
-)
+    shcore.lib)
 
 target_compile_definitions(libwebview_edge_static PUBLIC
-    LIB_WEBVIEW_EDGE
-)
+    LIB_WEBVIEW_EDGE)
 
-target_precompile_headers(libwebview_edge_static PRIVATE "include/precompiled.h")
+target_precompile_headers(libwebview_edge_static PRIVATE include/precompiled.h)
 
 endif()

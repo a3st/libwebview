@@ -2,6 +2,7 @@
 
 #pragma once
 
+<<<<<<< Updated upstream
 #include "concurrent_queue.hpp"
 
 namespace libwebview
@@ -16,25 +17,32 @@ namespace libwebview
         WebKit
     };
 
+=======
+namespace libwebview
+{
+>>>>>>> Stashed changes
     class Platform
     {
       public:
-        static auto create(std::string_view const app_name, std::string_view const title, uint32_t const width,
-                           uint32_t const height, bool const resizeable, bool const debug_mode,
-                           PlatformType const platform_type) -> Platform*;
+        using bind_func_t = std::function<void(uint64_t const, std::string_view const)>;
 
-        virtual auto set_max_size(uint32_t const width, uint32_t const height) -> void = 0;
+        static auto createInstance(std::string_view const appName, std::string_view const title, uint32_t const width,
+                                   uint32_t const height, bool const resizeable,
+                                   bool const debugMode) -> std::unique_ptr<Platform>;
 
-        virtual auto set_min_size(uint32_t const width, uint32_t const height) -> void = 0;
+        virtual auto setWindowMaxSize(uint32_t const width, uint32_t const height) -> void = 0;
 
-        virtual auto set_size(uint32_t const width, uint32_t const height) -> void = 0;
+        virtual auto setWindowMinSize(uint32_t const width, uint32_t const height) -> void = 0;
 
-        virtual auto run(std::string_view const url_path) -> void = 0;
+        virtual auto setWindowSize(uint32_t const width, uint32_t const height) -> void = 0;
 
-        virtual auto execute_js(std::string_view const js) -> void = 0;
+        virtual auto run(std::string_view const urlPath) -> void = 0;
+
+        virtual auto executeJavaScript(std::string_view const executeCode) -> void = 0;
 
         virtual auto quit() -> void = 0;
 
+<<<<<<< Updated upstream
         auto bind(std::string_view const func, bind_func_t&& callback, void* context) -> void;
 
         auto unbind(std::string_view const func) -> void;
@@ -51,5 +59,13 @@ namespace libwebview
         ConcurrentQueue<std::pair<invoke_func_t, void*>> main_queue;
         std::map<std::string, std::pair<bind_func_t, void*>> callbacks;
         std::pair<idle_func_t, void*> idle;
+=======
+        auto bind(std::string_view const functionName, bind_func_t&& callback) -> void;
+
+        auto result(uint64_t const index, bool const success, std::string_view const data) -> void;
+
+      protected:
+        std::unordered_map<std::string, bind_func_t> callbacks;
+>>>>>>> Stashed changes
     };
 } // namespace libwebview
