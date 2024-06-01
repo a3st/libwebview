@@ -4,109 +4,90 @@
 #include "platform.hpp"
 #include "precompiled.h"
 
-using namespace libwebview;
-
-C_Webview webview_create_app(char const* app_name, char const* title, uint32_t const width, uint32_t const height,
-                             bool const resizeable, bool const debug_mode)
+namespace libwebview
 {
-#ifdef LIB_WEBVIEW_EDGE
-    PlatformType platform_type = PlatformType::Edge;
-#endif
-    try
+    C_Webview webview_create_app(char const* app_name, char const* title, uint32_t const width, uint32_t const height,
+                                 bool const resizeable, bool const debug_mode)
     {
-        return Platform::create(app_name, title, width, height, resizeable, debug_mode, platform_type);
+        try
+        {
+            return Platform::createInstance(app_name, title, width, height, resizeable, debug_mode).release();
+        }
+        catch (std::runtime_error e)
+        {
+            return nullptr;
+        }
     }
-    catch (std::runtime_error e)
+
+    void webview_delete_app(C_Webview instance)
     {
-        return nullptr;
+        delete instance;
     }
-}
 
-void webview_delete_app(C_Webview instance)
-{
-    delete instance;
-}
-
-bool webview_run_app(C_Webview instance, char const* url_path)
-{
-    try
+    bool webview_run_app(C_Webview instance, char const* url_path)
     {
-        reinterpret_cast<Platform*>(instance)->run(url_path);
-        return true;
+        bool result = true;
+        try
+        {
+            reinterpret_cast<Platform*>(instance)->run(url_path);
+        }
+        catch (std::runtime_error e)
+        {
+            result = false;
+        }
+        return result;
     }
-    catch (std::runtime_error e)
+
+    void webview_quit_app(C_Webview instance)
     {
-        return false;
+        reinterpret_cast<Platform*>(instance)->quit();
     }
-}
 
-void webview_quit_app(C_Webview instance)
-{
-    reinterpret_cast<Platform*>(instance)->quit();
-}
-
-void webview_set_max_size_app(C_Webview instance, uint32_t const width, uint32_t const height)
-{
-    reinterpret_cast<Platform*>(instance)->set_max_size(width, height);
-}
-
-void webview_set_min_size_app(C_Webview instance, uint32_t const width, uint32_t const height)
-{
-    reinterpret_cast<Platform*>(instance)->set_min_size(width, height);
-}
-
-void webview_set_size_app(C_Webview instance, uint32_t const width, uint32_t const height)
-{
-    reinterpret_cast<Platform*>(instance)->set_size(width, height);
-}
-
-bool webview_bind(C_Webview instance, char const* func, void (*callback)(void*, uint64_t, char const*), void* context)
-{
-    try
+    void webview_set_max_size_app(C_Webview instance, uint32_t const width, uint32_t const height)
     {
-        reinterpret_cast<Platform*>(instance)->bind(
-            func,
-            [callback, context](uint64_t const index, std::string_view const data) {
-                callback(context, index, data.data());
-            },
-            context);
-        return true;
+        reinterpret_cast<Platform*>(instance)->setMaxWindowSize(width, height);
     }
-    catch (std::runtime_error e)
+
+    void webview_set_min_size_app(C_Webview instance, uint32_t const width, uint32_t const height)
     {
-        return false;
+        reinterpret_cast<Platform*>(instance)->setMinWindowSize(width, height);
     }
-}
 
-bool webview_unbind(C_Webview instance, char const* func)
-{
-    try
+    void webview_set_size_app(C_Webview instance, uint32_t const width, uint32_t const height)
     {
-        reinterpret_cast<Platform*>(instance)->unbind(func);
-        return true;
+        reinterpret_cast<Platform*>(instance)->setWindowSize(width, height);
     }
-    catch (std::runtime_error e)
+
+    bool webview_bind(C_Webview instance, char const* name, void (*function)(void*, uint64_t, char const*),
+                      void* context)
     {
-        return false;
+        bool result = true;
+        try
+        {
+            reinterpret_cast<Platform*>(instance)->bind(
+                name, [function, context](uint64_t const index, std::string_view const data) {
+                    function(context, index, data.data());
+                });
+        }
+        catch (std::runtime_error e)
+        {
+            result = false;
+        }
+        return result;
     }
-}
 
-void webview_result(C_Webview instance, uint64_t index, bool success, char const* data)
-{
-    reinterpret_cast<Platform*>(instance)->result(index, success, data);
-}
+    void webview_result(C_Webview instance, uint64_t index, bool success, char const* data)
+    {
+        reinterpret_cast<Platform*>(instance)->result(index, success, data);
+    }
 
-void webview_emit(C_Webview instance, char const* event, char const* data)
-{
-    reinterpret_cast<Platform*>(instance)->emit(event, data);
-}
+    void webview_emit(C_Webview instance, char const* event, char const* data)
+    {
+        reinterpret_cast<Platform*>(instance)->emit(event, data);
+    }
 
-void webview_invoke(C_Webview instance, void (*callback)(void*), void* context)
-{
-    reinterpret_cast<Platform*>(instance)->invoke([callback, context]() { callback(context); }, context);
-}
-
-void webview_set_idle(C_Webview instance, void (*callback)(void*), void* context)
-{
-    reinterpret_cast<Platform*>(instance)->set_idle([callback, context]() { callback(context); }, context);
-}
+    void webview_set_idle(C_Webview instance, void (*function)(void*), void* context)
+    {
+        reinterpret_cast<Platform*>(instance)->setIdle([function, context]() { function(context); });
+    }
+} // namespace libwebview

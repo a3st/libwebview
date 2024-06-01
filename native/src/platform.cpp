@@ -22,13 +22,24 @@ namespace libwebview
 #endif
     }
 
-    auto Platform::bind(std::string_view const functionName, bind_func_t&& callback) -> void
+    auto Platform::setIdle(idle_func_t&& function) -> void
     {
-        if (callbacks.find(std::string(functionName)) != callbacks.end())
+        idleCallback = std::move(function);
+    }
+
+    auto Platform::emit(std::string_view const eventName, std::string_view const data) -> void
+    {
+        std::string executeCode = std::vformat(js::onEmitInjection, std::make_format_args(eventName, data));
+        this->executeJavaScript(executeCode);
+    }
+
+    auto Platform::bind(std::string_view const functionName, bind_func_t&& function) -> void
+    {
+        if (bindCallbacks.find(std::string(functionName)) != bindCallbacks.end())
         {
             throw std::runtime_error("Cannot to bind a function that already exists");
         }
-        callbacks.emplace(std::string(functionName), std::move(callback));
+        bindCallbacks.emplace(std::string(functionName), std::move(function));
     }
 
     auto Platform::result(uint64_t const index, bool const success, std::string_view const data) -> void
@@ -42,6 +53,6 @@ namespace libwebview
         {
             executeCode = js::onResultRejectInjection;
         }
-        this->executeJavaScript(std::format(executeCode, index, data));
+        this->executeJavaScript(std::vformat(executeCode, std::make_format_args(index, data)));
     }
 } // namespace libwebview

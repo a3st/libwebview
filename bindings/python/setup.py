@@ -81,7 +81,7 @@ class CMakeBuildExt(build_ext):
         subprocess.run([cmd_path, "&", "cmake"] + build_args, cwd=self.build_temp)
 
 
-root_path = pathlib.Path(__file__).parent.resolve()
+root_path = pathlib.Path(__file__).parent.parent.parent.resolve()
 
 setup(
     name="libwebview",
@@ -100,7 +100,7 @@ setup(
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX :: Linux",
     ],
-    python_requires=">=3.11",
+    python_requires=">=3.10",
     project_urls={
         "Documentation": "https://github.com/a3st/libwebview/wiki",
         "Source": "https://github.com/a3st/libwebview",

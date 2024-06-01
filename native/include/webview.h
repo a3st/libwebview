@@ -79,19 +79,11 @@ extern "C"
         \brief Bind function for call from JS
 
         \param instance pointer to application
-        \param func a function name
-        \param callback a binded callback (context, index, data) -> void
+        \param name a function name
+        \param function a binded callback (context, index, data) -> void
     */
-    LIB_WEBVIEW_API bool webview_bind(C_Webview instance, char const* func,
-                                      void (*callback)(void*, uint64_t, char const*), void* context);
-
-    /*!
-        \brief Unbind function for call from JS
-
-        \param instance pointer to application
-        \param func a function name
-    */
-    LIB_WEBVIEW_API bool webview_unbind(C_Webview instance, char const* func);
+    LIB_WEBVIEW_API bool webview_bind(C_Webview instance, char const* name,
+                                      void (*function)(void*, uint64_t, char const*), void* context);
 
     /*!
         \brief Return result to JS function
@@ -113,18 +105,10 @@ extern "C"
     LIB_WEBVIEW_API void webview_emit(C_Webview instance, char const* event, char const* data);
 
     /*!
-        \brief Invoke function from UI thread
-
-        \param instance pointer to application
-        \param callback a invoke callback (context) -> void
-    */
-    LIB_WEBVIEW_API void webview_invoke(C_Webview instance, void (*callback)(void*), void* context);
-
-    /*!
         \brief Set application idle function
 
         \param instance pointer to application
-        \param callback a idle callback (context)
+        \param function a idle function (context)
     */
-    LIB_WEBVIEW_API void webview_set_idle(C_Webview instance, void (*callback)(void*), void* context);
+    LIB_WEBVIEW_API void webview_set_idle(C_Webview instance, void (*function)(void*), void* context);
 }

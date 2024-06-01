@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "platform.hpp"
+
 namespace libwebview
 {
     struct EventArgs
@@ -12,47 +14,47 @@ namespace libwebview
     class App
     {
       public:
-        App(std::string_view const app_name, std::string_view const title, uint32_t const width, uint32_t const height,
-            bool const resizeable, bool const debug_mode)
+        App(std::string_view const appName, std::string_view const title, uint32_t const width, uint32_t const height,
+            bool const resizeable, bool const debugMode)
         {
-            app = webview_create_app(std::string(app_name).c_str(), std::string(title).c_str(), width, height,
-                                     resizeable, debug_mode);
-        }
-
-        ~App()
-        {
-            webview_delete_app(app);
+            platform = std::make_unique<Platform>(appName, title, width, height, resizeable, debug_mode);
         }
 
         auto quit() -> void
         {
-            webview_quit_app(app);
+            platform->quit();
         }
 
-        auto run(std::string_view const url_path) -> bool
+        auto run(std::string_view const urlPath) -> void
         {
-            return webview_run_app(app, std::string(url_path).c_str());
+            platform->run(urlPath);
         }
 
-        auto set_size(uint32_t const width, uint32_t const height) -> void
+        auto setWindowSize(uint32_t const width, uint32_t const height) -> void
         {
-            webview_set_size_app(app, width, height);
+            platform->setWindowSize(width, height);
         }
 
-        auto set_min_size(uint32_t const width, uint32_t const height) -> void
+        auto setMinWindowSize(uint32_t const width, uint32_t const height) -> void
         {
-            webview_set_min_size_app(app, width, height);
+            platform->setMinWindowSize(width, height);
         }
 
-        auto set_max_size(uint32_t const width, uint32_t const height) -> void
+        auto setMaxWindowSize(uint32_t const width, uint32_t const height) -> void
         {
-            webview_set_max_size_app(app, width, height);
+            platform->setMaxWindowSize(width, height);
         }
 
         template <typename... Args>
-        auto bind(std::string_view const name, std::function<void(EventArgs const&, Args...)>&& callback) -> bool
+        auto bind(std::string_view const functionName,
+                  std::function<void(EventArgs const&, Args...)>&& function) -> void
         {
-            struct BindedContext
+            platform->bind(functionName, [](uint64_t const index, std::string_view const data) {
+                simdjson::ondemand::parser parser;
+                auto document = parser.iterate(data, data.size() + simdjson::SIMDJSON_PADDING);
+            });
+
+            /*struct BindedContext
             {
                 std::function<void(EventArgs const&, Args...)> callback;
             };
@@ -69,64 +71,32 @@ namespace libwebview
                     invoke_helper(args_data, std::index_sequence_for<Args...>{});
                 },
                 context);
+            */
         }
 
-        auto bind(std::string_view const name, std::function<void(EventArgs const&)>&& callback) -> bool
+        auto bind(std::string_view const functionName, std::function<void(EventArgs const&)>&& function) -> bool
         {
-            struct BindedContext
-            {
-                std::function<void(EventArgs const&)> callback;
-            };
-            auto context = new BindedContext{.callback = callback};
-
-            return webview_bind(
-                app, std::string(name).c_str(),
-                [](void* context, uint64_t const index, char const* data) {
-                    reinterpret_cast<BindedContext*>(context)->callback(EventArgs{.index = index});
-                },
-                context);
+            platform->bind(functionName, [function](uint64_t const index, std::string_view const data) {
+                function(EventArgs{.index = index});
+            });
         }
 
-        auto unbind(std::string_view const name) -> bool
+        auto emit(std::string_view const eventName, std::string_view const data) -> void
         {
-            return webview_unbind(app, std::string(name).c_str());
-        }
-
-        auto invoke(std::function<void()>&& callback) -> void
-        {
-            struct InvokedContext
-            {
-                std::function<void()> callback;
-            };
-            auto context = new InvokedContext{.callback = callback};
-
-            webview_invoke(
-                app, [](void* context) { reinterpret_cast<InvokedContext*>(context)->callback(); }, context);
-        }
-
-        auto emit(std::string_view const event, std::string_view const data) -> void
-        {
-            webview_emit(app, std::string(event).c_str(), std::string(data).c_str());
+            platform->emit(eventName, data);
         }
 
         auto result(uint64_t const index, bool const success, std::string_view const data) -> void
         {
-            webview_result(app, index, success, std::string(data).c_str());
+            platform->result(index, success, data);
         }
 
-        auto idle(std::function<void()>&& callback) -> void
+        auto setIdle(std::function<idle_func_t>&& function) -> void
         {
-            struct BindedContext
-            {
-                std::function<void()> callback;
-            };
-            auto context = new BindedContext{.callback = callback};
-
-            webview_set_idle(
-                app, [](void* context) { reinterpret_cast<BindedContext*>(context)->callback(); }, context);
+            platform->setIdle(functionName, std::move(function));
         }
 
       private:
-        C_Webview app;
+        std::unique_ptr<Platform> platform;
     };
 } // namespace libwebview

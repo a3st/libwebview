@@ -8,14 +8,15 @@ namespace libwebview
     {
       public:
         using bind_func_t = std::function<void(uint64_t const, std::string_view const)>;
+        using idle_func_t = std::function<void()>;
 
         static auto createInstance(std::string_view const appName, std::string_view const title, uint32_t const width,
-                                   uint32_t const height, bool const resizeable, bool const debugMode)
-            -> std::unique_ptr<Platform>;
+                                   uint32_t const height, bool const resizeable,
+                                   bool const debugMode) -> std::unique_ptr<Platform>;
 
-        virtual auto setWindowMaxSize(uint32_t const width, uint32_t const height) -> void = 0;
+        virtual auto setMaxWindowSize(uint32_t const width, uint32_t const height) -> void = 0;
 
-        virtual auto setWindowMinSize(uint32_t const width, uint32_t const height) -> void = 0;
+        virtual auto setMinWindowSize(uint32_t const width, uint32_t const height) -> void = 0;
 
         virtual auto setWindowSize(uint32_t const width, uint32_t const height) -> void = 0;
 
@@ -25,11 +26,16 @@ namespace libwebview
 
         virtual auto quit() -> void = 0;
 
-        auto bind(std::string_view const functionName, bind_func_t&& callback) -> void;
+        auto setIdle(idle_func_t&& function) -> void;
+
+        auto emit(std::string_view const eventName, std::string_view const data) -> void;
+
+        auto bind(std::string_view const functionName, bind_func_t&& function) -> void;
 
         auto result(uint64_t const index, bool const success, std::string_view const data) -> void;
 
       protected:
-        std::unordered_map<std::string, bind_func_t> callbacks;
+        std::unordered_map<std::string, bind_func_t> bindCallbacks;
+        idle_func_t idleCallback;
     };
 } // namespace libwebview

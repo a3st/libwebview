@@ -6,7 +6,7 @@ namespace libwebview
 {
     namespace js
     {
-        std::string onLoadHTMLInjection = LR"(
+        std::string const onLoadHTMLInjection = R"(
             class Queue {
                 constructor() {
                     this.elements = {};
@@ -69,6 +69,10 @@ namespace libwebview
                     this.allocator.deallocate(index);
                 }
 
+                bind(name, func) {
+                    document.addEventListener(String.format('webview:{0}', name), func);
+                }
+
                 invoke(name, ...args) {
                     const index = this.allocator.allocate();
 
@@ -93,8 +97,11 @@ namespace libwebview
             let webview = new WebView();
         )";
 
-        std::string onResultResolveInjection = "webview.results[{0}].resolve({1}); webview.__free_result__({0});";
+        std::string const onResultResolveInjection = "webview.results[{0}].resolve({1}); webview.__free_result__({0});";
 
-        std::string onResultRejectInjection = "webview.results[{0}].reject({1}); webview.__free_result__({0});";
+        std::string const onResultRejectInjection = "webview.results[{0}].reject({1}); webview.__free_result__({0});";
+
+        std::string const onEmitInjection =
+            "const event = new CustomEvent('{0}', '{1}'); document.dispatchEvent(event);";
     } // namespace js
 } // namespace libwebview

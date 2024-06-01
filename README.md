@@ -1,15 +1,15 @@
-![splash](https://github.com/a3st/libwebview/raw/main/splash-main.png)
+![splash](https://github.com/a3st/libwebview/raw/main/media/splash-main.png)
 
 ## Features
 
 * Rapid development of desktop applications using Web technologies
 * Minimum application weight due to the use of the WebView system component
-* A very simple library with a simple C interface
+* A very simple library with a simple C/C++ interface
 
 ## Requirements
 
 * Windows
-    * Installed WebView Edge component (Default on Windows 11)
+    * Installed WebView Edge component
     * Python 3.10+
 
 ## Install
@@ -18,7 +18,7 @@
 pip install libwebview
 ```
 
-## Example
+## Python Example
 
 ```python
 from libwebview import App
@@ -39,15 +39,35 @@ app.bind(window_close)
 app.run("resources/index.html")
 ```
 
+## C++ Example
+
+```c++
+#include <webview.hpp>
+
+int32_t main(int32_t argc, char** argv) {
+    try {
+        libwebview::App app("TestApp", "Test App", 800, 600, true, true);
+        app.run("resources/index.html");
+    } catch(std::runtime_error e) {
+        std::cerr << e.what() << std::endl;
+    }
+    return EXIT_SUCCESS;
+}
+```
+
 ## Wiki [Goto](https://github.com/a3st/libwebview/wiki)
+
+## Showcase
+
+### [IONENGINE - Editor](https://github.com/a3st/IONENGINE)
+![App](https://github.com/a3st/libwebview/raw/main/media/ionengine-editor.png)
 
 ## Roadmap
 
 - [x] Windows implementation (WebView Edge)
 - [ ] Linux implementation (WebKit)
 - [ ] Android implementation (Android WebView)
-- [ ] Customize label options menu
 
 ## License
 
-Check LICENSE for additional information.
+Check LICENSE for additional information

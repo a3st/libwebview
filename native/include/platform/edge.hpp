@@ -22,9 +22,9 @@ namespace libwebview
         Edge(std::string_view const appName, std::string_view const title, uint32_t const width, uint32_t const height,
              bool const resizeable, bool const debugMode);
 
-        auto setWindowMaxSize(uint32_t const width, uint32_t const height) -> void override;
+        auto setMaxWindowSize(uint32_t const width, uint32_t const height) -> void override;
 
-        auto setWindowMinSize(uint32_t const width, uint32_t const height) -> void override;
+        auto setMinWindowSize(uint32_t const width, uint32_t const height) -> void override;
 
         auto setWindowSize(uint32_t const width, uint32_t const height) -> void override;
 
@@ -54,7 +54,7 @@ namespace libwebview
         bool isInitialized;
         std::binary_semaphore semaphore;
 
-        static auto windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT;
+        static auto windowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
 
         auto webviewNavigationComplete(ICoreWebView2* sender,
                                        ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT;
