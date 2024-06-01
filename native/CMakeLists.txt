@@ -7,6 +7,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_C_STANDARD 11)
 
+add_subdirectory(thirdparty/simdjson)
+
 if(WIN32)
 
 add_library(libwebview_edge SHARED
@@ -50,7 +52,8 @@ target_link_directories(libwebview_edge_static PUBLIC
 target_link_libraries(libwebview_edge_static PUBLIC
     dwmapi.lib
     WebView2LoaderStatic.lib
-    shcore.lib)
+    shcore.lib
+    simdjson)
 
 target_compile_definitions(libwebview_edge_static PUBLIC
     LIB_WEBVIEW_EDGE)

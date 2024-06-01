@@ -4,6 +4,7 @@
 #include "precompiled.h"
 #include <wrl/event.h>
 using namespace Microsoft::WRL;
+#include <simdjson.h>
 
 namespace libwebview
 {
@@ -58,7 +59,7 @@ namespace libwebview
                     return 0;
                 }
 
-                auto rect = RECT{};
+                RECT rect;
                 ::GetClientRect(windowInstance->window, &rect);
                 windowInstance->controller->put_Bounds(rect);
                 break;
@@ -80,29 +81,49 @@ namespace libwebview
         return ::DefWindowProc(hWnd, msg, wParam, lParam);
     }
 
-    auto Edge::navigation_completed(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
+    auto Edge::webviewNavigationComplete(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args)
+        -> HRESULT
     {
-        if (!is_initialized)
+        if (!isInitialized)
         {
-            is_initialized = true;
+            isInitialized = true;
 
             ::ShowWindow(window, SW_SHOWNORMAL);
             ::UpdateWindow(window);
             ::SetFocus(window);
 
-            THROW_IF_FAILED(controller->put_IsVisible(TRUE));
+            throwIfFailed(controller->put_IsVisible(TRUE));
 
-            auto rect = RECT{};
+            RECT rect;
             ::GetClientRect(window, &rect);
-            THROW_IF_FAILED(controller->put_Bounds(rect));
+            throwIfFailed(controller->put_Bounds(rect));
         }
         return S_OK;
     }
 
-    auto Edge::web_message_received(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT
+    auto Edge::webviewMessageReceived(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT
     {
         LPWSTR buffer;
-        THROW_IF_FAILED(args->TryGetWebMessageAsString(&buffer));
+        throwIfFailed(args->TryGetWebMessageAsString(&buffer));
+
+        std::string jsonData = internal::toString(buffer);
+
+        simdjson::ondemand::parser parser;
+        auto document = parser.iterate(jsonData, jsonData.size() + simdjson::SIMDJSON_PADDING);
+
+        uint64_t index;
+        auto error = document["index"].get_uint64().get(index);
+        if (error != simdjson::error_code::SUCCESS)
+        {
+            return S_OK;
+        }
+
+        std::string_view functionName;
+        auto error = document["func"].get_string().get(functionName);
+        if (error != simdjson::error_code::SUCCESS)
+        {
+            return S_OK;
+        }
 
         auto message_data = json::parse(internal::to_string(buffer));
         auto index = message_data["index"].get<uint64_t>();
