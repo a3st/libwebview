@@ -7,6 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 11)
 
+include_guard(GLOBAL)
 add_subdirectory(thirdparty/simdjson)
 
 if(WIN32)
