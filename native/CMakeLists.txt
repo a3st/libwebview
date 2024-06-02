@@ -12,7 +12,6 @@ add_subdirectory(thirdparty/simdjson)
 endif()
 
 if(WIN32)
-
 add_library(libwebview_edge SHARED
     src/platform.cpp
     src/platform/edge.cpp
@@ -23,7 +22,7 @@ target_include_directories(libwebview_edge PUBLIC
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/thirdparty/webview2/include)
 
-target_link_directories(libwebview_edge PRIVATE
+target_link_directories(libwebview_edge PUBLIC
     ${PROJECT_SOURCE_DIR}/thirdparty/webview2/lib/x86_64)
 
 target_link_libraries(libwebview_edge PUBLIC
@@ -35,7 +34,7 @@ target_link_libraries(libwebview_edge PUBLIC
 target_compile_definitions(libwebview_edge PUBLIC
     LIB_WEBVIEW_EDGE)
 
-target_precompile_headers(libwebview_edge PRIVATE include/precompiled.h)
+target_precompile_headers(libwebview_edge PUBLIC include/precompiled.h)
 
 add_library(libwebview_edge_static STATIC
     src/platform.cpp
@@ -59,6 +58,5 @@ target_link_libraries(libwebview_edge_static PUBLIC
 target_compile_definitions(libwebview_edge_static PUBLIC
     LIB_WEBVIEW_EDGE)
 
-target_precompile_headers(libwebview_edge_static PRIVATE include/precompiled.h)
-
+target_precompile_headers(libwebview_edge_static PUBLIC include/precompiled.h)
 endif()

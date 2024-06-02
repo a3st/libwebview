@@ -110,12 +110,13 @@ namespace libwebview
         std::string const jsonData = internal::toString(buffer);
 
         simdjson::ondemand::parser parser;
-        auto document = parser.iterate(jsonData, jsonData.size() + simdjson::SIMDJSON_PADDING);
+        auto document = parser.iterate(jsonData.c_str(), jsonData.size(), jsonData.size() + simdjson::SIMDJSON_PADDING);
 
         uint64_t index;
         auto error = document["index"].get_uint64().get(index);
         if (error != simdjson::error_code::SUCCESS)
         {
+            ::CoTaskMemFree(buffer);
             return S_OK;
         }
 
@@ -123,7 +124,22 @@ namespace libwebview
         error = document["func"].get_string().get(functionName);
         if (error != simdjson::error_code::SUCCESS)
         {
+            ::CoTaskMemFree(buffer);
             return S_OK;
+        }
+
+        std::string_view argumentData;
+        error = document["args"].raw_json().get(argumentData);
+        if (error != simdjson::error_code::SUCCESS)
+        {
+            ::CoTaskMemFree(buffer);
+            return S_OK;
+        }
+
+        auto found = bindCallbacks.find(std::string(functionName));
+        if (found != bindCallbacks.end())
+        {
+            found->second(index, argumentData);
         }
 
         ::CoTaskMemFree(buffer);
@@ -132,7 +148,7 @@ namespace libwebview
 
     Edge::Edge(std::string_view const appName, std::string_view const title, uint32_t const width,
                uint32_t const height, bool const resizeable, bool const debugMode)
-        : isInitialized(false), semaphore(0)
+        : isInitialized(false), semaphore(0), minSize{}, maxSize{}
     {
         throwIfFailed(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
         throwIfFailed(::SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE));
