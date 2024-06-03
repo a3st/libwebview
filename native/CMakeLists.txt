@@ -11,8 +11,6 @@ if (NOT TARGET simdjson)
 add_subdirectory(thirdparty/simdjson)
 endif()
 
-find_package(cppcoro CONFIG REQUIRED)
-
 if(WIN32)
 add_library(libwebview_edge SHARED
     src/platform.cpp
@@ -31,6 +29,7 @@ target_link_libraries(libwebview_edge PUBLIC
     dwmapi.lib
     WebView2LoaderStatic.lib
     shcore.lib
+    Comctl32.lib
     simdjson)
 
 target_compile_definitions(libwebview_edge PUBLIC
@@ -55,8 +54,8 @@ target_link_libraries(libwebview_edge_static PUBLIC
     dwmapi.lib
     WebView2LoaderStatic.lib
     shcore.lib
-    simdjson
-    cppcoro)
+    Comctl32.lib
+    simdjson)
 
 target_compile_definitions(libwebview_edge_static PUBLIC
     LIB_WEBVIEW_EDGE)

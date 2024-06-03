@@ -4,6 +4,16 @@
 
 namespace libwebview
 {
+    enum class MessageDialogType
+    {
+        Information,
+        Error,
+        Warning
+    };
+
+    auto showMessageDialog(std::string_view const title, std::string_view const message,
+                           MessageDialogType const messageType) -> void;
+
     class Platform
     {
       public:

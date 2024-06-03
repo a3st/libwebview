@@ -5,8 +5,27 @@
 #include <wrl/event.h>
 using namespace Microsoft::WRL;
 #include "injection.hpp"
+#include <commctrl.h>
 #include <shobjidl.h>
 #include <simdjson.h>
+
+#if defined _M_IX86
+#pragma comment(                                                                                                       \
+    linker,                                                                                                            \
+    "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#elif defined _M_IA64
+#pragma comment(                                                                                                       \
+    linker,                                                                                                            \
+    "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='ia64' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#elif defined _M_X64
+#pragma comment(                                                                                                       \
+    linker,                                                                                                            \
+    "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='amd64' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#else
+#pragma comment(                                                                                                       \
+    linker,                                                                                                            \
+    "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#endif
 
 namespace libwebview
 {
@@ -331,8 +350,6 @@ namespace libwebview
         MSG msg;
         bool running = true;
 
-        cppcoro::static_thread_pool thread_pool;
-
         while (running)
         {
             if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -388,6 +405,7 @@ namespace libwebview
 
         std::wstring const currentFolderPath = internal::toWstring(initialPath.string());
         winrt::com_ptr<IShellItem> currentFolder;
+
         throwIfFailed(SHCreateItemFromParsingName(currentFolderPath.c_str(), NULL, __uuidof(IShellItem),
                                                   currentFolder.put_void()));
         throwIfFailed(fileDialog->SetDefaultFolder(currentFolder.get()));
@@ -437,5 +455,29 @@ namespace libwebview
             }
         }
         return std::nullopt;
+    }
+
+    auto showMessageDialog(std::string_view const title, std::string_view const message,
+                                 MessageDialogType const messageType) -> void
+    {
+        PCWSTR iconPath = nullptr;
+        switch (messageType)
+        {
+            case MessageDialogType::Information: {
+                iconPath = TD_INFORMATION_ICON;
+                break;
+            }
+            case MessageDialogType::Warning: {
+                iconPath = TD_WARNING_ICON;
+                break;
+            }
+            case MessageDialogType::Error: {
+                iconPath = TD_ERROR_ICON;
+                break;
+            }
+        }
+
+        throwIfFailed(TaskDialog(nullptr, nullptr, internal::toWstring(title).c_str(), nullptr,
+                                 internal::toWstring(message).c_str(), TDCBF_OK_BUTTON, iconPath, nullptr));
     }
 } // namespace libwebview
