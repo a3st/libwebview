@@ -9,3 +9,6 @@
 #include <map>
 #include <semaphore>
 #include <tuple>
+#include <type_traits>
+#include <cppcoro/task.hpp>
+#include <cppcoro/static_thread_pool.hpp>

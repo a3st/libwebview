@@ -49,12 +49,29 @@ namespace libwebview
                 return std::stoi(array[Index]);
             }
         };
-    } // namespace internal
 
-    struct EventArgs
-    {
-        uint64_t index;
-    };
+        // https://github.com/aminroosta/sqlite_modern_cpp/blob/master/hdr/sqlite_modern_cpp/utility/function_traits.h
+        template <typename>
+        struct function_traits;
+
+        template <typename Function>
+        struct function_traits : public function_traits<decltype(&Function::operator())>
+        {
+        };
+
+        template <typename ClassType, typename ReturnType, typename... Arguments>
+        struct function_traits<ReturnType (ClassType::*)(Arguments...) const>
+        {
+            typedef ReturnType result_type;
+
+            typedef std::tuple<Arguments...> arguments;
+
+            template <std::size_t Index>
+            using argument = typename std::tuple_element<Index, std::tuple<Arguments...>>::type;
+
+            static const std::size_t arity = sizeof...(Arguments);
+        };
+    } // namespace internal
 
     class App
     {
@@ -90,21 +107,23 @@ namespace libwebview
             platform->setMaxWindowSize(width, height);
         }
 
-        template <typename... Args>
-        auto bind(std::string_view const functionName,
-                  std::function<void(EventArgs const&, Args...)>&& function) -> void
+        template <typename Func>
+        auto bind(std::string_view const functionName, Func&& function) -> void
         {
-            platform->bind(functionName, [function](uint64_t const index, std::string_view const data) {
+            using func_ret_t = internal::function_traits<Func>::result_type;
+            using func_arguments = internal::function_traits<Func>::arguments;
+
+            platform->bind(functionName, [&, function](uint64_t const index, std::string_view const data) {
                 simdjson::ondemand::parser parser;
                 auto document = parser.iterate(data, data.size() + simdjson::SIMDJSON_PADDING);
 
-                auto invoke_helper = [function]<size_t... I>(
+                auto invoke_helper = [&, function]<size_t... I>(
                                          simdjson::fallback::ondemand::document_stream::iterator::value_type& document,
                                          std::index_sequence<I...>) {
                     constexpr auto numArgs = sizeof...(I);
                     std::array<std::string, numArgs> arguments;
 
-                    size_t index = 0;
+                    size_t i = 0;
                     for (auto argument : document.get_array())
                     {
                         simdjson::fallback::ondemand::json_type valueType;
@@ -124,7 +143,7 @@ namespace libwebview
                                 {
                                     throw std::runtime_error("Failed to get value from received message");
                                 }
-                                arguments[index] = std::to_string(value);
+                                arguments[i] = std::to_string(value);
                                 break;
                             }
                             case simdjson::ondemand::json_type::boolean: {
@@ -134,7 +153,11 @@ namespace libwebview
                                 {
                                     throw std::runtime_error("Failed to get value from received message");
                                 }
-                                arguments[index] = value ? "1" : "0";
+                                arguments[i] = value ? "1" : "0";
+                                break;
+                            }
+                            case simdjson::ondemand::json_type::null: {
+                                arguments[i] = "";
                                 break;
                             }
                             default: {
@@ -144,26 +167,68 @@ namespace libwebview
                                 {
                                     throw std::runtime_error("Failed to get value from received message");
                                 }
-                                arguments[index] = value;
+                                arguments[i] = value;
                                 break;
                             }
                         }
 
-                        ++index;
+                        ++i;
                     }
 
-                    function(EventArgs{.index = index}, internal::ConvertArray<Args, I, numArgs>()(arguments)...);
+                    if constexpr (std::is_integral_v<func_ret_t> || std::is_floating_point_v<func_ret_t>)
+                    {
+                        auto result =
+                            function(internal::ConvertArray<std::tuple_element_t<I, func_arguments>, I, numArgs>()(
+                                arguments)...);
+                        platform->result(index, true, std::to_string(result));
+                    }
+                    else if constexpr (std::is_same_v<func_ret_t, std::basic_string<char, std::char_traits<char>,
+                                                                                    std::allocator<char>>>)
+                    {
+                        auto result =
+                            function(internal::ConvertArray<std::tuple_element_t<I, func_arguments>, I, numArgs>()(
+                                arguments)...);
+                        platform->result(index, true, result);
+                    }
+                    else if constexpr (std::is_void_v<func_ret_t>)
+                    {
+                        function(internal::ConvertArray<std::tuple_element_t<I, func_arguments>, I, numArgs>()(
+                            arguments)...);
+                        platform->result(index, true, "");
+                    }
+                    else
+                    {
+                        static_assert(true, "Invalid return type");
+                    }
                 };
 
-                invoke_helper(document, std::index_sequence_for<Args...>());
-            });
-        }
-
-        template <>
-        auto bind(std::string_view const functionName, std::function<void(EventArgs const&)>&& function) -> void
-        {
-            platform->bind(functionName, [function](uint64_t const index, std::string_view const data) {
-                function(EventArgs{.index = index});
+                if constexpr (internal::function_traits<Func>::arity != 0)
+                {
+                    invoke_helper(document, std::make_index_sequence<internal::function_traits<Func>::arity>());
+                }
+                else
+                {
+                    if constexpr (std::is_integral_v<func_ret_t> || std::is_floating_point_v<func_ret_t>)
+                    {
+                        auto result = function();
+                        platform->result(index, true, std::to_string(result));
+                    }
+                    else if constexpr (std::is_same_v<func_ret_t, std::basic_string<char, std::char_traits<char>,
+                                                                                    std::allocator<char>>>)
+                    {
+                        auto result = function();
+                        platform->result(index, true, result);
+                    }
+                    else if constexpr (std::is_void_v<func_ret_t>)
+                    {
+                        function();
+                        platform->result(index, true, "");
+                    }
+                    else
+                    {
+                        static_assert(true, "Invalid return type");
+                    }
+                }
             });
         }
 

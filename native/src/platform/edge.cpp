@@ -313,6 +313,8 @@ namespace libwebview
         MSG msg;
         bool running = true;
 
+        cppcoro::static_thread_pool thread_pool;
+
         while (running)
         {
             if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
