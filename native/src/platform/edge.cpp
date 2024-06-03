@@ -411,15 +411,16 @@ namespace libwebview
         throwIfFailed(fileDialog->SetDefaultFolder(currentFolder.get()));
 
         auto const fileTypes = internal::split(std::string(filter), "|");
+
+        std::vector<std::wstring> wFilterTypes(fileTypes.size());
+        std::vector<COMDLG_FILTERSPEC> filterSpecs;
         if (fileTypes.size() % 2 == 0)
         {
-            std::vector<std::wstring> wFilterTypes(fileTypes.size());
             for (uint32_t const i : std::views::iota(0u, wFilterTypes.size()))
             {
                 wFilterTypes[i] = internal::toWstring(fileTypes[i]);
             }
 
-            std::vector<COMDLG_FILTERSPEC> filterSpecs;
             for (size_t i = 0; i < fileTypes.size(); i += 2)
             {
                 filterSpecs.emplace_back(wFilterTypes[i].c_str(), wFilterTypes[i + 1].c_str());
@@ -429,7 +430,7 @@ namespace libwebview
         }
         else
         {
-            std::array<COMDLG_FILTERSPEC, 1> filterSpecs = {{L"All files (*.*)", L"*.*"}};
+            filterSpecs.emplace_back(COMDLG_FILTERSPEC{L"All files (*.*)", L"*.*"});
             throwIfFailed(fileDialog->SetFileTypes(filterSpecs.size(), filterSpecs.data()));
         }
 
@@ -444,7 +445,20 @@ namespace libwebview
                 PWSTR selectFilePath = nullptr;
                 throwIfFailed(result->GetDisplayName(SIGDN_FILESYSPATH, &selectFilePath));
 
-                std::filesystem::path const outPath = internal::toString(selectFilePath);
+                uint32_t typeIndex;
+                throwIfFailed(fileDialog->GetFileTypeIndex(&typeIndex));
+
+                std::string extPath = internal::toString(filterSpecs[typeIndex - 1].pszSpec);
+                if (extPath.compare("*.*") == 0)
+                {
+                    extPath = "";
+                }
+                else
+                {
+                    extPath = extPath.substr(1, extPath.size());
+                }
+
+                std::filesystem::path const outPath = internal::toString(selectFilePath) + extPath;
 
                 ::CoTaskMemFree(selectFilePath);
                 return outPath;
@@ -458,7 +472,7 @@ namespace libwebview
     }
 
     auto showMessageDialog(std::string_view const title, std::string_view const message,
-                                 MessageDialogType const messageType) -> void
+                           MessageDialogType const messageType) -> void
     {
         PCWSTR iconPath = nullptr;
         switch (messageType)
