@@ -247,6 +247,12 @@ namespace libwebview
             platform->setIdle(std::move(function));
         }
 
+        auto showSaveDialog(std::filesystem::path const& initialPath,
+                            std::string_view const filter) -> std::optional<std::filesystem::path>
+        {
+            return platform->showSaveDialog(initialPath, filter);
+        }
+
       private:
         std::unique_ptr<Platform> platform;
     };

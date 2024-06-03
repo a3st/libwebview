@@ -34,6 +34,9 @@ namespace libwebview
 
         auto quit() -> void override;
 
+        auto showSaveDialog(std::filesystem::path const& initialPath,
+                            std::string_view const filter) -> std::optional<std::filesystem::path> override;
+
       private:
         HWND window;
         DEVICE_SCALE_FACTOR scaleFactor;

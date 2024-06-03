@@ -5,6 +5,7 @@
 #include <wrl/event.h>
 using namespace Microsoft::WRL;
 #include "injection.hpp"
+#include <shobjidl.h>
 #include <simdjson.h>
 
 namespace libwebview
@@ -36,6 +37,23 @@ namespace libwebview
             ::WideCharToMultiByte(CP_UTF8, 0, source.data(), static_cast<int32_t>(source.size()), dest.data(),
                                   static_cast<int32_t>(dest.size()), nullptr, nullptr);
             return dest;
+        }
+
+        auto split(std::string s, std::string delimiter) -> std::vector<std::string>
+        {
+            size_t start = 0, end, delimeterLength = delimiter.length();
+            std::string token;
+            std::vector<std::string> result;
+
+            while ((end = s.find(delimiter, start)) != std::string::npos)
+            {
+                token = s.substr(start, end - start);
+                start = end + delimeterLength;
+                result.push_back(token);
+            }
+
+            result.push_back(s.substr(start));
+            return result;
         }
     } // namespace internal
 
@@ -355,5 +373,69 @@ namespace libwebview
     auto Edge::quit() -> void
     {
         ::PostQuitMessage(0);
+    }
+
+    auto Edge::showSaveDialog(std::filesystem::path const& initialPath,
+                              std::string_view const filter) -> std::optional<std::filesystem::path>
+    {
+        winrt::com_ptr<IFileDialog> fileDialog;
+        throwIfFailed(CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_INPROC_SERVER, __uuidof(IFileDialog),
+                                       fileDialog.put_void()));
+
+        DWORD flags;
+        throwIfFailed(fileDialog->GetOptions(&flags));
+        throwIfFailed(fileDialog->SetOptions(flags | FOS_FORCEFILESYSTEM));
+
+        std::wstring const currentFolderPath = internal::toWstring(initialPath.string());
+        winrt::com_ptr<IShellItem> currentFolder;
+        throwIfFailed(SHCreateItemFromParsingName(currentFolderPath.c_str(), NULL, __uuidof(IShellItem),
+                                                  currentFolder.put_void()));
+        throwIfFailed(fileDialog->SetDefaultFolder(currentFolder.get()));
+
+        auto const fileTypes = internal::split(std::string(filter), "|");
+        if (fileTypes.size() % 2 == 0)
+        {
+            std::vector<std::wstring> wFilterTypes(fileTypes.size());
+            for (uint32_t const i : std::views::iota(0u, wFilterTypes.size()))
+            {
+                wFilterTypes[i] = internal::toWstring(fileTypes[i]);
+            }
+
+            std::vector<COMDLG_FILTERSPEC> filterSpecs;
+            for (size_t i = 0; i < fileTypes.size(); i += 2)
+            {
+                filterSpecs.emplace_back(wFilterTypes[i].c_str(), wFilterTypes[i + 1].c_str());
+            }
+
+            throwIfFailed(fileDialog->SetFileTypes(filterSpecs.size(), filterSpecs.data()));
+        }
+        else
+        {
+            std::array<COMDLG_FILTERSPEC, 1> filterSpecs = {{L"All files (*.*)", L"*.*"}};
+            throwIfFailed(fileDialog->SetFileTypes(filterSpecs.size(), filterSpecs.data()));
+        }
+
+        HRESULT hr = fileDialog->Show(window);
+        if (SUCCEEDED(hr))
+        {
+            winrt::com_ptr<IShellItem> result;
+
+            hr = fileDialog->GetResult(result.put());
+            if (SUCCEEDED(hr))
+            {
+                PWSTR selectFilePath = nullptr;
+                throwIfFailed(result->GetDisplayName(SIGDN_FILESYSPATH, &selectFilePath));
+
+                std::filesystem::path const outPath = internal::toString(selectFilePath);
+
+                ::CoTaskMemFree(selectFilePath);
+                return outPath;
+            }
+            else
+            {
+                return std::nullopt;
+            }
+        }
+        return std::nullopt;
     }
 } // namespace libwebview

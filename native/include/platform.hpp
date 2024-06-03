@@ -34,6 +34,9 @@ namespace libwebview
 
         auto result(uint64_t const index, bool const success, std::string_view const data) -> void;
 
+        virtual auto showSaveDialog(std::filesystem::path const& initialPath,
+                                    std::string_view const filter) -> std::optional<std::filesystem::path> = 0;
+
       protected:
         std::unordered_map<std::string, bind_func_t> bindCallbacks;
         idle_func_t idleCallback;
