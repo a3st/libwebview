@@ -188,7 +188,14 @@ namespace libwebview
                         auto result =
                             function(internal::ConvertArray<std::tuple_element_t<I, func_arguments>, I, numArgs>()(
                                 arguments)...);
-                        platform->result(index, true, result);
+                        if (result.front() == '{' && result.back() == '}')
+                        {
+                            platform->result(index, true, result);
+                        }
+                        else
+                        {
+                            platform->result(index, true, "\"" + result + "\"");
+                        }
                     }
                     else if constexpr (std::is_void_v<func_ret_t>)
                     {
@@ -217,7 +224,14 @@ namespace libwebview
                                                                                     std::allocator<char>>>)
                     {
                         auto result = function();
-                        platform->result(index, true, result);
+                        if (result.front() == '{' && result.back() == '}')
+                        {
+                            platform->result(index, true, result);
+                        }
+                        else
+                        {
+                            platform->result(index, true, "\"" + result + "\"");
+                        }
                     }
                     else if constexpr (std::is_void_v<func_ret_t>)
                     {
