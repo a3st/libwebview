@@ -160,6 +160,16 @@ namespace libwebview
                                 arguments[i] = "";
                                 break;
                             }
+                            case simdjson::ondemand::json_type::object: {
+                                simdjson::fallback::ondemand::object value;
+                                error = argument.get_object().get(value);
+                                if (error != simdjson::SUCCESS)
+                                {
+                                    throw std::runtime_error("Failed to get value from received message");
+                                }
+                                arguments[i] = value.raw_json().value();
+                                break;
+                            }
                             default: {
                                 std::string_view value;
                                 error = argument.get_string().get(value);
