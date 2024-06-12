@@ -147,7 +147,7 @@ namespace libwebview
         std::string const jsonData = internal::toString(buffer);
 
         simdjson::ondemand::parser parser;
-        auto document = parser.iterate(jsonData.c_str(), jsonData.size(), jsonData.size() + simdjson::SIMDJSON_PADDING);
+        auto document = parser.iterate(jsonData, jsonData.size() + simdjson::SIMDJSON_PADDING);
 
         uint64_t index;
         auto error = document["index"].get_uint64().get(index);
