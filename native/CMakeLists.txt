@@ -7,9 +7,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_C_STANDARD 11)
 
-if (NOT TARGET simdjson)
-add_subdirectory(thirdparty/simdjson)
-endif()
+include(FetchContent)
+
+FetchContent_Declare(simdjson
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/thirdparty/simdjson
+    BINARY_DIR ${CMAKE_BINARY_DIR}/thirdparty/simdjson)
+
+FetchContent_MakeAvailable(simdjson)
 
 if(WIN32)
 add_library(libwebview_edge SHARED
