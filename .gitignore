@@ -1,5 +1,7 @@
 build
 __pycache__
 .vscode
+.vs
 dist
 *.egg-info
+CMakeSettings.json
