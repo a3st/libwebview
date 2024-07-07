@@ -39,10 +39,6 @@ class App:
     def quit(self):
         lib.webview_quit_app(self.instance)
 
-    def emit(self, event: str, args):
-        data = json.dumps(args)
-        lib.webview_emit(self.instance, event.encode(), data.encode())
-
     def invoke(self, func):
         lib.webview_invoke(self.instance, WebViewLib.INVOKE_FUNC_T(lambda ctx: func()))
 

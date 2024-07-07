@@ -96,15 +96,6 @@ extern "C"
     LIB_WEBVIEW_API void webview_result(C_Webview instance, uint64_t index, bool success, char const* data);
 
     /*!
-        \brief Emit event from JS
-
-        \param instance pointer to application
-        \param event a event name
-        \param data a event data
-    */
-    LIB_WEBVIEW_API void webview_emit(C_Webview instance, char const* event, char const* data);
-
-    /*!
         \brief Set application idle function
 
         \param instance pointer to application

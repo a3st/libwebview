@@ -190,7 +190,14 @@ namespace libwebview
                         ++i;
                     }
 
-                    if constexpr (std::is_integral_v<func_ret_t> || std::is_floating_point_v<func_ret_t>)
+                    if constexpr (std::is_integral_v<func_ret_t> && std::is_same_v<func_ret_t, bool>)
+                    {
+                        auto result =
+                            function(internal::ConvertArray<std::tuple_element_t<I, func_arguments>, I, numArgs>()(
+                                arguments)...);
+                        platform->result(index, true, result ? "true" : "false");
+                    }
+                    else if constexpr (std::is_integral_v<func_ret_t> || std::is_floating_point_v<func_ret_t>)
                     {
                         auto result =
                             function(internal::ConvertArray<std::tuple_element_t<I, func_arguments>, I, numArgs>()(
@@ -217,6 +224,21 @@ namespace libwebview
                         function(internal::ConvertArray<std::tuple_element_t<I, func_arguments>, I, numArgs>()(
                             arguments)...);
                         platform->result(index, true, "");
+                    }
+                    else if constexpr (std::is_same_v<concurrencpp::result<bool>, func_ret_t>)
+                    {
+                        threadPoolExecutor->submit(
+                            [&, function, arguments,
+                             &Size = numArgs](uint64_t const index) -> concurrencpp::result<void> {
+                                auto result = co_await function(
+                                    internal::ConvertArray<std::tuple_element_t<I, func_arguments>, I, Size>()(
+                                        arguments)...);
+
+                                resultExecutor->submit(
+                                    [&, index, result]() { platform->result(index, true, result ? "true" : "false"); });
+                                co_return;
+                            },
+                            index);
                     }
                     else if constexpr (std::is_same_v<concurrencpp::result<int32_t>, func_ret_t> ||
                                        std::is_same_v<concurrencpp::result<int64_t>, func_ret_t> ||
@@ -289,7 +311,12 @@ namespace libwebview
                 }
                 else
                 {
-                    if constexpr (std::is_integral_v<func_ret_t> || std::is_floating_point_v<func_ret_t>)
+                    if constexpr (std::is_integral_v<func_ret_t> && std::is_same_v<func_ret_t, bool>)
+                    {
+                        auto result = function();
+                        platform->result(index, true, result ? "true" : "false");
+                    }
+                    else if constexpr (std::is_integral_v<func_ret_t> || std::is_floating_point_v<func_ret_t>)
                     {
                         auto result = function();
                         platform->result(index, true, std::to_string(result));
@@ -311,6 +338,18 @@ namespace libwebview
                     {
                         function();
                         platform->result(index, true, "");
+                    }
+                    else if constexpr (std::is_same_v<concurrencpp::result<bool>, func_ret_t>)
+                    {
+                        threadPoolExecutor->submit(
+                            [&, function](uint64_t const index) -> concurrencpp::result<void> {
+                                auto result = co_await function();
+
+                                resultExecutor->submit(
+                                    [&, index, result]() { platform->result(index, true, result ? "true" : "false"); });
+                                co_return;
+                            },
+                            index);
                     }
                     else if constexpr (std::is_same_v<concurrencpp::result<int32_t>, func_ret_t> ||
                                        std::is_same_v<concurrencpp::result<int64_t>, func_ret_t> ||
@@ -368,11 +407,6 @@ namespace libwebview
                     }
                 }
             });
-        }
-
-        auto emit(std::string_view const eventName, std::string_view const data) -> void
-        {
-            platform->emit(eventName, data);
         }
 
         auto result(uint64_t const index, bool const success, std::string_view const data) -> void

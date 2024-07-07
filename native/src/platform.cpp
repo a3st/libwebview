@@ -27,12 +27,6 @@ namespace libwebview
         idleCallback = std::move(function);
     }
 
-    auto Platform::emit(std::string_view const eventName, std::string_view const data) -> void
-    {
-        std::string executeCode = std::vformat(js::onEmitInjection, std::make_format_args(eventName, data));
-        this->executeJavaScript(executeCode);
-    }
-
     auto Platform::bind(std::string_view const functionName, bind_func_t&& function) -> void
     {
         if (bindCallbacks.find(std::string(functionName)) != bindCallbacks.end())

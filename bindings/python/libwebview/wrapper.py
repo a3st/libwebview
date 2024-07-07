@@ -96,4 +96,3 @@ class WebViewLib:
         self.webview_set_size_app = self.lib.webview_set_size_app
         self.webview_bind = self.lib.webview_bind
         self.webview_result = self.lib.webview_result
-        self.webview_emit = self.lib.webview_emit

@@ -38,8 +38,6 @@ namespace libwebview
 
         auto setIdle(idle_func_t&& function) -> void;
 
-        auto emit(std::string_view const eventName, std::string_view const data) -> void;
-
         auto bind(std::string_view const functionName, bind_func_t&& function) -> void;
 
         auto result(uint64_t const index, bool const success, std::string_view const data) -> void;
