@@ -1,3 +1,6 @@
 [submodule "native/thirdparty/simdjson"]
 	path = native/thirdparty/simdjson
 	url = https://github.com/simdjson/simdjson.git
+[submodule "native/thirdparty/concurrencpp"]
+	path = native/thirdparty/concurrencpp
+	url = https://github.com/David-Haim/concurrencpp

@@ -11,8 +11,8 @@
 namespace libwebview
 {
     auto Platform::createInstance(std::string_view const appName, std::string_view const title, uint32_t const width,
-                                  uint32_t const height, bool const resizeable,
-                                  bool const debugMode) -> std::unique_ptr<Platform>
+                                  uint32_t const height, bool const resizeable, bool const debugMode)
+        -> std::unique_ptr<Platform>
     {
 #ifdef LIB_WEBVIEW_EDGE
         return std::make_unique<Edge>(appName, title, width, height, resizeable, debugMode);

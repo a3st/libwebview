@@ -13,11 +13,11 @@ FetchContent_Declare(simdjson
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/thirdparty/simdjson
     BINARY_DIR ${CMAKE_BINARY_DIR}/thirdparty/simdjson)
 
-FetchContent_Declare(cppcoro
-    SOURCE_DIR ${PROJECT_SOURCE_DIR}/thirdparty/cppcoro
-    BINARY_DIR ${CMAKE_BINARY_DIR}/thirdparty/cppcoro)
+FetchContent_Declare(concurrencpp
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/thirdparty/concurrencpp
+    BINARY_DIR ${CMAKE_BINARY_DIR}/thirdparty/concurrencpp)
 
-FetchContent_MakeAvailable(simdjson cppcoro)
+FetchContent_MakeAvailable(simdjson concurrencpp)
 
 if(WIN32)
 add_library(libwebview_edge SHARED
@@ -34,6 +34,7 @@ target_link_directories(libwebview_edge PUBLIC
     ${PROJECT_SOURCE_DIR}/thirdparty/webview2/lib/x86_64)
 
 target_link_libraries(libwebview_edge PUBLIC
+    concurrencpp
     dwmapi.lib
     WebView2LoaderStatic.lib
     shcore.lib
@@ -59,7 +60,7 @@ target_link_directories(libwebview_edge_static PUBLIC
     ${PROJECT_SOURCE_DIR}/thirdparty/webview2/lib/x86_64)
 
 target_link_libraries(libwebview_edge_static PUBLIC
-    cppcoro
+    concurrencpp
     dwmapi.lib
     WebView2LoaderStatic.lib
     shcore.lib

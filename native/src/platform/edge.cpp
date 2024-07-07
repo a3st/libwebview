@@ -119,8 +119,8 @@ namespace libwebview
         return ::DefWindowProc(hWnd, msg, wParam, lParam);
     }
 
-    auto Edge::webviewNavigationComplete(ICoreWebView2* sender,
-                                         ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
+    auto Edge::webviewNavigationComplete(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args)
+        -> HRESULT
     {
         if (!isInitialized)
         {
@@ -392,8 +392,8 @@ namespace libwebview
         ::PostQuitMessage(0);
     }
 
-    auto Edge::showSaveDialog(std::filesystem::path const& initialPath,
-                              std::string_view const filter) -> std::optional<std::filesystem::path>
+    auto Edge::showSaveDialog(std::filesystem::path const& initialPath, std::string_view const filter)
+        -> std::optional<std::filesystem::path>
     {
         winrt::com_ptr<IFileDialog> fileDialog;
         throwIfFailed(CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_INPROC_SERVER, __uuidof(IFileDialog),
@@ -426,12 +426,12 @@ namespace libwebview
                 filterSpecs.emplace_back(wFilterTypes[i].c_str(), wFilterTypes[i + 1].c_str());
             }
 
-            throwIfFailed(fileDialog->SetFileTypes(filterSpecs.size(), filterSpecs.data()));
+            throwIfFailed(fileDialog->SetFileTypes(static_cast<uint32_t>(filterSpecs.size()), filterSpecs.data()));
         }
         else
         {
             filterSpecs.emplace_back(COMDLG_FILTERSPEC{L"All files (*.*)", L"*.*"});
-            throwIfFailed(fileDialog->SetFileTypes(filterSpecs.size(), filterSpecs.data()));
+            throwIfFailed(fileDialog->SetFileTypes(static_cast<uint32_t>(filterSpecs.size()), filterSpecs.data()));
         }
 
         HRESULT hr = fileDialog->Show(window);

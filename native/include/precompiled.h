@@ -10,3 +10,4 @@
 #include <semaphore>
 #include <tuple>
 #include <type_traits>
+#include <variant>

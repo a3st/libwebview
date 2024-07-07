@@ -3,6 +3,7 @@
 #pragma once
 
 #include "platform.hpp"
+#include <concurrencpp/concurrencpp.h>
 #include <simdjson.h>
 
 namespace libwebview
@@ -80,6 +81,11 @@ namespace libwebview
             bool const resizeable, bool const debugMode)
         {
             platform = Platform::createInstance(appName, title, width, height, resizeable, debugMode);
+
+            threadPoolExecutor = runtime.thread_pool_executor();
+            resultExecutor = runtime.make_manual_executor();
+
+            platform->setIdle([&]() { resultExecutor->loop(10); });
         }
 
         auto quit() -> void
@@ -127,7 +133,6 @@ namespace libwebview
                     for (auto argument : document.get_array())
                     {
                         simdjson::fallback::ondemand::json_type valueType;
-
                         auto error = argument.type().get(valueType);
                         if (error != simdjson::SUCCESS)
                         {
@@ -213,6 +218,65 @@ namespace libwebview
                             arguments)...);
                         platform->result(index, true, "");
                     }
+                    else if constexpr (std::is_same_v<concurrencpp::result<int32_t>, func_ret_t> ||
+                                       std::is_same_v<concurrencpp::result<int64_t>, func_ret_t> ||
+                                       std::is_same_v<concurrencpp::result<uint32_t>, func_ret_t> ||
+                                       std::is_same_v<concurrencpp::result<uint64_t>, func_ret_t> ||
+                                       std::is_same_v<concurrencpp::result<float>, func_ret_t> ||
+                                       std::is_same_v<concurrencpp::result<double>, func_ret_t>)
+                    {
+                        threadPoolExecutor->submit(
+                            [&, function, arguments,
+                             &Size = numArgs](uint64_t const index) -> concurrencpp::result<void> {
+                                auto result = co_await function(
+                                    internal::ConvertArray<std::tuple_element_t<I, func_arguments>, I, Size>()(
+                                        arguments)...);
+
+                                resultExecutor->submit(
+                                    [&, index, result]() { platform->result(index, true, std::to_string(result)); });
+                                co_return;
+                            },
+                            index);
+                    }
+                    else if constexpr (std::is_same_v<concurrencpp::result<std::basic_string<
+                                                          char, std::char_traits<char>, std::allocator<char>>>,
+                                                      func_ret_t>)
+                    {
+                        threadPoolExecutor->submit(
+                            [&, function, arguments,
+                             &Size = numArgs](uint64_t const index) -> concurrencpp::result<void> {
+                                auto result = co_await function(
+                                    internal::ConvertArray<std::tuple_element_t<I, func_arguments>, I, Size>()(
+                                        arguments)...);
+
+                                resultExecutor->submit([&, index, result]() {
+                                    if (!result.empty() && result.front() == '{' && result.back() == '}')
+                                    {
+                                        platform->result(index, true, result);
+                                    }
+                                    else
+                                    {
+                                        platform->result(index, true, "\"" + result + "\"");
+                                    }
+                                });
+                                co_return;
+                            },
+                            index);
+                    }
+                    else if constexpr (std::is_same_v<concurrencpp::result<void>, func_ret_t>)
+                    {
+                        threadPoolExecutor->submit(
+                            [&, function, arguments,
+                             &Size = numArgs](uint64_t const index) -> concurrencpp::result<void> {
+                                co_await function(
+                                    internal::ConvertArray<std::tuple_element_t<I, func_arguments>, I, Size>()(
+                                        arguments)...);
+
+                                resultExecutor->submit([&, index, result]() { platform->result(index, true, ""); });
+                                co_return;
+                            },
+                            index);
+                    }
                     else
                     {
                         static_assert(true, "Invalid return type");
@@ -234,7 +298,7 @@ namespace libwebview
                                                                                     std::allocator<char>>>)
                     {
                         auto result = function();
-                        if (result.front() == '{' && result.back() == '}')
+                        if (!result.empty() && result.front() == '{' && result.back() == '}')
                         {
                             platform->result(index, true, result);
                         }
@@ -247,6 +311,56 @@ namespace libwebview
                     {
                         function();
                         platform->result(index, true, "");
+                    }
+                    else if constexpr (std::is_same_v<concurrencpp::result<int32_t>, func_ret_t> ||
+                                       std::is_same_v<concurrencpp::result<int64_t>, func_ret_t> ||
+                                       std::is_same_v<concurrencpp::result<uint32_t>, func_ret_t> ||
+                                       std::is_same_v<concurrencpp::result<uint64_t>, func_ret_t> ||
+                                       std::is_same_v<concurrencpp::result<float>, func_ret_t> ||
+                                       std::is_same_v<concurrencpp::result<double>, func_ret_t>)
+                    {
+                        threadPoolExecutor->submit(
+                            [&, function](uint64_t const index) -> concurrencpp::result<void> {
+                                auto result = co_await function();
+
+                                resultExecutor->submit(
+                                    [&, index, result]() { platform->result(index, true, std::to_string(result)); });
+                                co_return;
+                            },
+                            index);
+                    }
+                    else if constexpr (std::is_same_v<concurrencpp::result<std::basic_string<
+                                                          char, std::char_traits<char>, std::allocator<char>>>,
+                                                      func_ret_t>)
+                    {
+                        threadPoolExecutor->submit(
+                            [&, function](uint64_t const index) -> concurrencpp::result<void> {
+                                auto result = co_await function();
+
+                                resultExecutor->submit([&, index, result]() {
+                                    if (!result.empty() && result.front() == '{' && result.back() == '}')
+                                    {
+                                        platform->result(index, true, result);
+                                    }
+                                    else
+                                    {
+                                        platform->result(index, true, "\"" + result + "\"");
+                                    }
+                                });
+                                co_return;
+                            },
+                            index);
+                    }
+                    else if constexpr (std::is_same_v<concurrencpp::result<void>, func_ret_t>)
+                    {
+                        threadPoolExecutor->submit(
+                            [&, function](uint64_t const index) -> concurrencpp::result<void> {
+                                co_await function();
+
+                                resultExecutor->submit([&, index, result]() { platform->result(index, true, ""); });
+                                co_return;
+                            },
+                            index);
                     }
                     else
                     {
@@ -266,18 +380,26 @@ namespace libwebview
             platform->result(index, success, data);
         }
 
-        auto setIdle(std::function<void()>&& function) -> void
+        template <typename Func>
+        auto setIdle(Func&& function) -> void
         {
-            platform->setIdle(std::move(function));
+            platform->setIdle([&, function]() {
+                resultExecutor->loop(10);
+                function();
+            });
         }
 
-        auto showSaveDialog(std::filesystem::path const& initialPath,
-                            std::string_view const filter) -> std::optional<std::filesystem::path>
+        auto showSaveDialog(std::filesystem::path const& initialPath, std::string_view const filter)
+            -> std::optional<std::filesystem::path>
         {
             return platform->showSaveDialog(initialPath, filter);
         }
 
       private:
         std::unique_ptr<Platform> platform;
+
+        concurrencpp::runtime runtime;
+        std::shared_ptr<concurrencpp::thread_pool_executor> threadPoolExecutor;
+        std::shared_ptr<concurrencpp::manual_executor> resultExecutor;
     };
 } // namespace libwebview
