@@ -1,7 +1,8 @@
 # Copyright © 2022-2024 Dmitriy Lukovenko. All rights reserved.
 
-cmake_minimum_required(VERSION 3.25.3)
-project(libwebview VERSION 1.0.0)
+cmake_minimum_required(VERSION 3.25.1)
+
+project(libwebview VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
@@ -20,33 +21,7 @@ FetchContent_Declare(concurrencpp
 FetchContent_MakeAvailable(simdjson concurrencpp)
 
 if(WIN32)
-add_library(libwebview_edge SHARED
-    src/platform.cpp
-    src/platform/edge.cpp
-    src/webview.cpp)
-
-target_include_directories(libwebview_edge PUBLIC
-    ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/thirdparty/webview2/include)
-
-target_link_directories(libwebview_edge PUBLIC
-    ${PROJECT_SOURCE_DIR}/thirdparty/webview2/lib/x86_64)
-
-target_link_libraries(libwebview_edge PUBLIC
-    concurrencpp
-    dwmapi.lib
-    WebView2LoaderStatic.lib
-    shcore.lib
-    Comctl32.lib
-    simdjson)
-
-target_compile_definitions(libwebview_edge PUBLIC
-    LIB_WEBVIEW_EDGE)
-
-target_precompile_headers(libwebview_edge PUBLIC include/precompiled.h)
-
-add_library(libwebview_edge_static STATIC
+add_library(libwebview_edge STATIC
     src/platform.cpp
     src/platform/edge.cpp
     src/webview.cpp)
@@ -73,6 +48,37 @@ target_compile_definitions(libwebview_edge_static PUBLIC
 target_precompile_headers(libwebview_edge_static PUBLIC include/precompiled.h)
 endif()
 
+if(UNIX)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK REQUIRED gtk4)
+
+add_library(libwebview_cef STATIC
+    src/platform.cpp
+    src/platform/cef.cpp
+    src/webview.cpp)
+
+target_include_directories(libwebview_cef PUBLIC
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/thirdparty/cef/include
+    ${GTK_INCLUDE_DIRS})
+
+target_link_directories(libwebview_cef PUBLIC
+    ${PROJECT_SOURCE_DIR}/thirdparty/cef/bin/x86_64
+    ${GTK_LIBRARY_DIRS})
+
+target_link_libraries(libwebview_cef PUBLIC
+    concurrencpp
+    cef
+    simdjson
+    ${GTK_LIBRARIES})
+
+target_compile_definitions(libwebview_cef PUBLIC
+    LIB_WEBVIEW_CEF)
+
+target_precompile_headers(libwebview_cef PUBLIC include/precompiled.h)
+endif()
+
 add_executable(async_test tests/async_test.cpp)
 
-target_link_libraries(async_test PRIVATE libwebview_edge_static)
+target_link_libraries(async_test PRIVATE libwebview_cef)

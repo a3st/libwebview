@@ -105,12 +105,12 @@ namespace libwebview
 
         auto setMinWindowSize(uint32_t const width, uint32_t const height) -> void
         {
-            platform->setMinWindowSize(width, height);
+            platform->setWindowMinSize(width, height);
         }
 
         auto setMaxWindowSize(uint32_t const width, uint32_t const height) -> void
         {
-            platform->setMaxWindowSize(width, height);
+            platform->setWindowMaxSize(width, height);
         }
 
         template <typename Func>
@@ -294,7 +294,7 @@ namespace libwebview
                                     internal::ConvertArray<std::tuple_element_t<I, func_arguments>, I, Size>()(
                                         arguments)...);
 
-                                resultExecutor->submit([&, index, result]() { platform->result(index, true, ""); });
+                                resultExecutor->submit([&, index]() { platform->result(index, true, ""); });
                                 co_return;
                             },
                             index);
@@ -396,7 +396,7 @@ namespace libwebview
                             [&, function](uint64_t const index) -> concurrencpp::result<void> {
                                 co_await function();
 
-                                resultExecutor->submit([&, index, result]() { platform->result(index, true, ""); });
+                                resultExecutor->submit([&, index]() { platform->result(index, true, ""); });
                                 co_return;
                             },
                             index);
@@ -423,8 +423,8 @@ namespace libwebview
             });
         }
 
-        auto showSaveDialog(std::filesystem::path const& initialPath, std::string_view const filter)
-            -> std::optional<std::filesystem::path>
+        auto showSaveDialog(std::filesystem::path const& initialPath,
+                            std::string_view const filter) -> std::optional<std::filesystem::path>
         {
             return platform->showSaveDialog(initialPath, filter);
         }

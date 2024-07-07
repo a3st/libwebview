@@ -294,7 +294,7 @@ namespace libwebview
         throwIfFailed(settings->put_AreDefaultContextMenusEnabled(debugMode ? TRUE : FALSE));
     }
 
-    auto Edge::setMaxWindowSize(uint32_t const width, uint32_t const height) -> void
+    auto Edge::setWindowMaxSize(uint32_t const width, uint32_t const height) -> void
     {
         if (std::make_tuple(width, height) == std::make_tuple<uint32_t, uint32_t>(0, 0))
         {
@@ -319,7 +319,7 @@ namespace libwebview
                    .height = height * static_cast<uint32_t>(scaleFactor) / 100};
     }
 
-    auto Edge::setMinWindowSize(uint32_t const width, uint32_t const height) -> void
+    auto Edge::setWindowMinSize(uint32_t const width, uint32_t const height) -> void
     {
         minSize = {.width = width * static_cast<uint32_t>(scaleFactor) / 100,
                    .height = height * static_cast<uint32_t>(scaleFactor) / 100};

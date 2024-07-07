@@ -22,9 +22,9 @@ namespace libwebview
         Edge(std::string_view const appName, std::string_view const title, uint32_t const width, uint32_t const height,
              bool const resizeable, bool const debugMode);
 
-        auto setMaxWindowSize(uint32_t const width, uint32_t const height) -> void override;
+        auto setWindowMaxSize(uint32_t const width, uint32_t const height) -> void override;
 
-        auto setMinWindowSize(uint32_t const width, uint32_t const height) -> void override;
+        auto setWindowMinSize(uint32_t const width, uint32_t const height) -> void override;
 
         auto setWindowSize(uint32_t const width, uint32_t const height) -> void override;
 

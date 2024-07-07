@@ -8,6 +8,10 @@
 #include "platform/edge.hpp"
 #endif
 
+#ifdef LIB_WEBVIEW_CEF
+#include "platform/cef.hpp"
+#endif
+
 namespace libwebview
 {
     auto Platform::createInstance(std::string_view const appName, std::string_view const title, uint32_t const width,
@@ -16,6 +20,8 @@ namespace libwebview
     {
 #ifdef LIB_WEBVIEW_EDGE
         return std::make_unique<Edge>(appName, title, width, height, resizeable, debugMode);
+#elif LIB_WEBVIEW_CEF
+        return std::make_unique<CEF>(appName, title, width, height, resizeable, debugMode);
 #else
 #error libwebview target platform is not defined
         return nullptr;

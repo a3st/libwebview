@@ -21,7 +21,7 @@ namespace libwebview
 
     void webview_delete_app(C_Webview instance)
     {
-        delete instance;
+        delete reinterpret_cast<Platform*>(instance);
     }
 
     bool webview_run_app(C_Webview instance, char const* url_path)
@@ -45,12 +45,12 @@ namespace libwebview
 
     void webview_set_max_size_app(C_Webview instance, uint32_t const width, uint32_t const height)
     {
-        reinterpret_cast<Platform*>(instance)->setMaxWindowSize(width, height);
+        reinterpret_cast<Platform*>(instance)->setWindowMaxSize(width, height);
     }
 
     void webview_set_min_size_app(C_Webview instance, uint32_t const width, uint32_t const height)
     {
-        reinterpret_cast<Platform*>(instance)->setMinWindowSize(width, height);
+        reinterpret_cast<Platform*>(instance)->setWindowMinSize(width, height);
     }
 
     void webview_set_size_app(C_Webview instance, uint32_t const width, uint32_t const height)
