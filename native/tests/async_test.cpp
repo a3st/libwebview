@@ -5,8 +5,11 @@ int32_t main(int32_t argc, char** argv)
 {
     libwebview::App app("org.libwebview.test", "testApp", 800, 600, true, true);
 
-    app.bind("syncTest", []() -> int32_t {
-        std::cout << "Sync hello world!" << std::endl;
+    app.setWindowMinSize(200, 200);
+
+    app.bind("syncTest", [&]() -> int32_t {
+        app.showSaveDialog("/home/", "");
+        //libwebview::showMessageDialog("Title", "Message", libwebview::MessageDialogType::Information);
         return 20;
     });
 

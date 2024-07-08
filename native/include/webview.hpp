@@ -103,12 +103,12 @@ namespace libwebview
             platform->setWindowSize(width, height);
         }
 
-        auto setMinWindowSize(uint32_t const width, uint32_t const height) -> void
+        auto setWindowMinSize(uint32_t const width, uint32_t const height) -> void
         {
             platform->setWindowMinSize(width, height);
         }
 
-        auto setMaxWindowSize(uint32_t const width, uint32_t const height) -> void
+        auto setWindowMaxSize(uint32_t const width, uint32_t const height) -> void
         {
             platform->setWindowMaxSize(width, height);
         }

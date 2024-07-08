@@ -3,6 +3,7 @@
 #pragma once
 
 #include "platform.hpp"
+#include <adwaita.h>
 #include <gtk/gtk.h>
 #include <webkit/webkit.h>
 
@@ -45,5 +46,6 @@ namespace libwebview
         WindowSize maxSize;
 
         bool isInitialized;
+        std::binary_semaphore semaphore;
     };
 } // namespace libwebview

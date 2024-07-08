@@ -119,8 +119,8 @@ namespace libwebview
         return ::DefWindowProc(hWnd, msg, wParam, lParam);
     }
 
-    auto Edge::webviewNavigationComplete(ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args)
-        -> HRESULT
+    auto Edge::webviewNavigationComplete(ICoreWebView2* sender,
+                                         ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
     {
         if (!isInitialized)
         {
@@ -333,8 +333,10 @@ namespace libwebview
 
     auto Edge::run(std::string_view const urlPath) -> void
     {
-        throwIfFailed(webview->AddScriptToExecuteOnDocumentCreated(internal::toWstring(js::onLoadHTMLInjection).c_str(),
-                                                                   nullptr));
+        throwIfFailed(webview->AddScriptToExecuteOnDocumentCreated(
+            internal::toWstring(std::vformat(js::onLoadHTMLInjection, std::make_format_args("window.chrome.webview")))
+                .c_str(),
+            nullptr));
 
         if (urlPath.starts_with("http://") || urlPath.starts_with("https://"))
         {
@@ -392,8 +394,8 @@ namespace libwebview
         ::PostQuitMessage(0);
     }
 
-    auto Edge::showSaveDialog(std::filesystem::path const& initialPath, std::string_view const filter)
-        -> std::optional<std::filesystem::path>
+    auto Edge::showSaveDialog(std::filesystem::path const& initialPath,
+                              std::string_view const filter) -> std::optional<std::filesystem::path>
     {
         winrt::com_ptr<IFileDialog> fileDialog;
         throwIfFailed(CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_INPROC_SERVER, __uuidof(IFileDialog),

@@ -56,6 +56,7 @@ if(UNIX)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK REQUIRED gtk4)
 pkg_check_modules(WEBKITGTK REQUIRED webkitgtk-6.0)
+pkg_check_modules(LIBADWAITA REQUIRED libadwaita-1)
 
 add_library(libwebview_webkit STATIC
     src/platform.cpp
@@ -66,17 +67,19 @@ target_include_directories(libwebview_webkit PUBLIC
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/include
     ${WEBKITGTK_INCLUDE_DIRS}
+    ${LIBADWAITA_INCLUDE_DIRS}
     ${GTK_INCLUDE_DIRS})
 
 target_link_directories(libwebview_webkit PUBLIC
     ${WEBKITGTK_LIBRARY_DIRS}
+    ${LIBADWAITA_LIBRARY_DIRS}
     ${GTK_LIBRARY_DIRS})
 
 target_link_libraries(libwebview_webkit PUBLIC
     concurrencpp
     simdjson
-    pthread
     ${WEBKITGTK_LIBRARIES}
+    ${LIBADWAITA_LIBRARIES}
     ${GTK_LIBRARIES})
 
 target_compile_definitions(libwebview_webkit PUBLIC
