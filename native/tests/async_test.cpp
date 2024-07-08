@@ -3,7 +3,7 @@
 
 int32_t main(int32_t argc, char** argv)
 {
-    libwebview::App app("testAppAsync", "testApp", 800, 600, true, true);
+    libwebview::App app("org.libwebview.test", "testApp", 800, 600, true, true);
 
     app.bind("syncTest", []() -> int32_t {
         std::cout << "Sync hello world!" << std::endl;

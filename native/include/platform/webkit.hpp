@@ -3,14 +3,16 @@
 #pragma once
 
 #include "platform.hpp"
+#include <gtk/gtk.h>
+#include <webkit/webkit.h>
 
 namespace libwebview
 {
-    class CEF final : public Platform
+    class WebKit final : public Platform
     {
       public:
-        CEF(std::string_view const appName, std::string_view const title, uint32_t const width, uint32_t const height,
-            bool const resizeable, bool const debugMode);
+        WebKit(std::string_view const appName, std::string_view const title, uint32_t const width,
+               uint32_t const height, bool const resizeable, bool const debugMode);
 
         auto setWindowMaxSize(uint32_t const width, uint32_t const height) -> void override;
 
@@ -28,6 +30,11 @@ namespace libwebview
                             std::string_view const filter) -> std::optional<std::filesystem::path> override;
 
       private:
+        GtkWindow* window;
+        WebKitWebView* webview;
+
+        std::string appName;
+
         struct WindowSize
         {
             uint32_t width;

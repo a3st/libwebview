@@ -8,8 +8,8 @@
 #include "platform/edge.hpp"
 #endif
 
-#ifdef LIB_WEBVIEW_CEF
-#include "platform/cef.hpp"
+#ifdef LIB_WEBVIEW_WEBKIT
+#include "platform/webkit.hpp"
 #endif
 
 namespace libwebview
@@ -20,8 +20,8 @@ namespace libwebview
     {
 #ifdef LIB_WEBVIEW_EDGE
         return std::make_unique<Edge>(appName, title, width, height, resizeable, debugMode);
-#elif LIB_WEBVIEW_CEF
-        return std::make_unique<CEF>(appName, title, width, height, resizeable, debugMode);
+#elif LIB_WEBVIEW_WEBKIT
+        return std::make_unique<WebKit>(appName, title, width, height, resizeable, debugMode);
 #else
 #error libwebview target platform is not defined
         return nullptr;

@@ -51,34 +51,35 @@ endif()
 if(UNIX)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK REQUIRED gtk4)
+pkg_check_modules(WEBKITGTK REQUIRED webkitgtk-6.0)
 
-add_library(libwebview_cef STATIC
+add_library(libwebview_webkit STATIC
     src/platform.cpp
-    src/platform/cef.cpp
+    src/platform/webkit.cpp
     src/webview.cpp)
 
-target_include_directories(libwebview_cef PUBLIC
+target_include_directories(libwebview_webkit PUBLIC
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/thirdparty/cef/include
+    ${WEBKITGTK_INCLUDE_DIRS}
     ${GTK_INCLUDE_DIRS})
 
-target_link_directories(libwebview_cef PUBLIC
-    ${PROJECT_SOURCE_DIR}/thirdparty/cef/bin/x86_64
+target_link_directories(libwebview_webkit PUBLIC
+    ${WEBKITGTK_LIBRARY_DIRS}
     ${GTK_LIBRARY_DIRS})
 
-target_link_libraries(libwebview_cef PUBLIC
+target_link_libraries(libwebview_webkit PUBLIC
     concurrencpp
-    cef
     simdjson
+    ${WEBKITGTK_LIBRARIES}
     ${GTK_LIBRARIES})
 
-target_compile_definitions(libwebview_cef PUBLIC
-    LIB_WEBVIEW_CEF)
+target_compile_definitions(libwebview_webkit PUBLIC
+    LIB_WEBVIEW_WEBKIT)
 
-target_precompile_headers(libwebview_cef PUBLIC include/precompiled.h)
+target_precompile_headers(libwebview_webkit PUBLIC include/precompiled.h)
 endif()
 
 add_executable(async_test tests/async_test.cpp)
 
-target_link_libraries(async_test PRIVATE libwebview_cef)
+target_link_libraries(async_test PRIVATE libwebview_webkit)
