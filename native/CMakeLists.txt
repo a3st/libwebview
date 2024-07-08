@@ -26,15 +26,15 @@ add_library(libwebview_edge STATIC
     src/platform/edge.cpp
     src/webview.cpp)
 
-target_include_directories(libwebview_edge_static PUBLIC
+target_include_directories(libwebview_edge PUBLIC
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/thirdparty/webview2/include)
 
-target_link_directories(libwebview_edge_static PUBLIC
+target_link_directories(libwebview_edge PUBLIC
     ${PROJECT_SOURCE_DIR}/thirdparty/webview2/lib/x86_64)
 
-target_link_libraries(libwebview_edge_static PUBLIC
+target_link_libraries(libwebview_edge PUBLIC
     concurrencpp
     dwmapi.lib
     WebView2LoaderStatic.lib
@@ -42,10 +42,14 @@ target_link_libraries(libwebview_edge_static PUBLIC
     Comctl32.lib
     simdjson)
 
-target_compile_definitions(libwebview_edge_static PUBLIC
+target_compile_definitions(libwebview_edge PUBLIC
     LIB_WEBVIEW_EDGE)
 
-target_precompile_headers(libwebview_edge_static PUBLIC include/precompiled.h)
+target_precompile_headers(libwebview_edge PUBLIC include/precompiled.h)
+
+add_executable(async_test tests/async_test.cpp)
+
+target_link_libraries(async_test PRIVATE libwebview_edge)
 endif()
 
 if(UNIX)
@@ -71,6 +75,7 @@ target_link_directories(libwebview_webkit PUBLIC
 target_link_libraries(libwebview_webkit PUBLIC
     concurrencpp
     simdjson
+    pthread
     ${WEBKITGTK_LIBRARIES}
     ${GTK_LIBRARIES})
 
@@ -78,8 +83,8 @@ target_compile_definitions(libwebview_webkit PUBLIC
     LIB_WEBVIEW_WEBKIT)
 
 target_precompile_headers(libwebview_webkit PUBLIC include/precompiled.h)
-endif()
 
 add_executable(async_test tests/async_test.cpp)
 
 target_link_libraries(async_test PRIVATE libwebview_webkit)
+endif()
