@@ -34,8 +34,8 @@ namespace libwebview
 
         auto quit() -> void override;
 
-        auto showSaveDialog(std::filesystem::path const& initialPath,
-                            std::string_view const filter) -> std::optional<std::filesystem::path> override;
+        auto showSaveDialog(std::filesystem::path const& initialPath, std::string_view const filter)
+            -> std::optional<std::filesystem::path> override;
 
       private:
         HWND window;
@@ -58,10 +58,5 @@ namespace libwebview
         std::binary_semaphore semaphore;
 
         static auto windowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
-
-        auto webviewNavigationComplete(ICoreWebView2* sender,
-                                       ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT;
-
-        auto webviewMessageReceived(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT;
     };
 } // namespace libwebview

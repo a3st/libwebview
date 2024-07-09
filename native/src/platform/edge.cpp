@@ -29,7 +29,7 @@ using namespace Microsoft::WRL;
 
 namespace libwebview
 {
-    auto throwIfFailed(HRESULT hr) -> void
+    auto throwIfFailed(HRESULT const hr) -> void
     {
         if (FAILED(hr))
         {
@@ -39,7 +39,7 @@ namespace libwebview
 
     namespace internal
     {
-        auto toWstring(std::string_view const source) -> std::wstring
+        auto toWString(std::string_view const source) -> std::wstring
         {
             int32_t length =
                 ::MultiByteToWideChar(CP_UTF8, 0, source.data(), static_cast<int32_t>(source.size()), nullptr, 0);
@@ -58,20 +58,20 @@ namespace libwebview
             return dest;
         }
 
-        auto split(std::string s, std::string delimiter) -> std::vector<std::string>
+        auto split(std::string const& source, std::string const& delimiter) -> std::vector<std::string>
         {
             size_t start = 0, end, delimeterLength = delimiter.length();
             std::string token;
             std::vector<std::string> result;
 
-            while ((end = s.find(delimiter, start)) != std::string::npos)
+            while ((end = source.find(delimiter, start)) != std::string::npos)
             {
-                token = s.substr(start, end - start);
+                token = source.substr(start, end - start);
                 start = end + delimeterLength;
-                result.push_back(token);
+                result.emplace_back(token);
             }
 
-            result.push_back(s.substr(start));
+            result.emplace_back(source.substr(start));
             return result;
         }
     } // namespace internal
@@ -79,7 +79,6 @@ namespace libwebview
     auto Edge::windowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT
     {
         auto windowInstance = reinterpret_cast<Edge*>(::GetWindowLongPtr(hWnd, GWLP_USERDATA));
-
         if (!windowInstance)
         {
             return ::DefWindowProc(hWnd, msg, wParam, lParam);
@@ -119,81 +118,17 @@ namespace libwebview
         return ::DefWindowProc(hWnd, msg, wParam, lParam);
     }
 
-    auto Edge::webviewNavigationComplete(ICoreWebView2* sender,
-                                         ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT
-    {
-        if (!isInitialized)
-        {
-            isInitialized = true;
-
-            ::ShowWindow(window, SW_SHOWNORMAL);
-            ::UpdateWindow(window);
-            ::SetFocus(window);
-
-            throwIfFailed(controller->put_IsVisible(TRUE));
-
-            RECT rect;
-            ::GetClientRect(window, &rect);
-            throwIfFailed(controller->put_Bounds(rect));
-        }
-        return S_OK;
-    }
-
-    auto Edge::webviewMessageReceived(ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT
-    {
-        LPWSTR buffer;
-        throwIfFailed(args->TryGetWebMessageAsString(&buffer));
-
-        std::string const jsonData = internal::toString(buffer);
-
-        simdjson::ondemand::parser parser;
-        auto document = parser.iterate(jsonData, jsonData.size() + simdjson::SIMDJSON_PADDING);
-
-        uint64_t index;
-        auto error = document["index"].get_uint64().get(index);
-        if (error != simdjson::error_code::SUCCESS)
-        {
-            ::CoTaskMemFree(buffer);
-            return S_OK;
-        }
-
-        std::string_view functionName;
-        error = document["func"].get_string().get(functionName);
-        if (error != simdjson::error_code::SUCCESS)
-        {
-            ::CoTaskMemFree(buffer);
-            return S_OK;
-        }
-
-        std::string_view argumentData;
-        error = document["args"].raw_json().get(argumentData);
-        if (error != simdjson::error_code::SUCCESS)
-        {
-            ::CoTaskMemFree(buffer);
-            return S_OK;
-        }
-
-        auto found = bindCallbacks.find(std::string(functionName));
-        if (found != bindCallbacks.end())
-        {
-            found->second(index, argumentData);
-        }
-
-        ::CoTaskMemFree(buffer);
-        return S_OK;
-    }
-
     Edge::Edge(std::string_view const appName, std::string_view const title, uint32_t const width,
                uint32_t const height, bool const resizeable, bool const debugMode)
-        : isInitialized(false), semaphore(0), minSize{}, maxSize{}
+        : minSize{}, maxSize{}, isInitialized(false), semaphore(0)
     {
         throwIfFailed(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
         throwIfFailed(::SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE));
 
-        auto wndClass = WNDCLASSEX{.cbSize = sizeof(WNDCLASSEX),
-                                   .lpfnWndProc = windowProcedure,
-                                   .hInstance = ::GetModuleHandle(nullptr),
-                                   .lpszClassName = "LIB_WEBVIEW_APP"};
+        WNDCLASSEX wndClass{.cbSize = sizeof(WNDCLASSEX),
+                            .lpfnWndProc = windowProcedure,
+                            .hInstance = ::GetModuleHandle(nullptr),
+                            .lpszClassName = "LIB_WEBVIEW_APP"};
 
         if (!::RegisterClassEx(&wndClass))
         {
@@ -280,11 +215,71 @@ namespace libwebview
         throwIfFailed(controller->get_CoreWebView2(webview.put()));
 
         throwIfFailed(webview->add_NavigationCompleted(
-            Callback<ICoreWebView2NavigationCompletedEventHandler>(this, &Edge::webviewNavigationComplete).Get(),
+            Callback<ICoreWebView2NavigationCompletedEventHandler>(
+                [this](ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args) -> HRESULT {
+                    if (!isInitialized)
+                    {
+                        isInitialized = true;
+
+                        ::ShowWindow(window, SW_SHOWNORMAL);
+                        ::UpdateWindow(window);
+                        ::SetFocus(window);
+
+                        throwIfFailed(controller->put_IsVisible(TRUE));
+
+                        RECT rect;
+                        ::GetClientRect(window, &rect);
+                        throwIfFailed(controller->put_Bounds(rect));
+                    }
+                    return S_OK;
+                })
+                .Get(),
             &eventToken));
 
         throwIfFailed(webview->add_WebMessageReceived(
-            Callback<ICoreWebView2WebMessageReceivedEventHandler>(this, &Edge::webviewMessageReceived).Get(),
+            Callback<ICoreWebView2WebMessageReceivedEventHandler>([this](ICoreWebView2* sender,
+                                                                         ICoreWebView2WebMessageReceivedEventArgs* args)
+                                                                      -> HRESULT {
+                LPWSTR buffer;
+                throwIfFailed(args->TryGetWebMessageAsString(&buffer));
+                std::string const jsonData = internal::toString(buffer);
+
+                simdjson::ondemand::parser parser;
+                auto document = parser.iterate(jsonData, jsonData.size() + simdjson::SIMDJSON_PADDING);
+
+                uint64_t index;
+                auto error = document["index"].get_uint64().get(index);
+                if (error != simdjson::error_code::SUCCESS)
+                {
+                    ::CoTaskMemFree(buffer);
+                    return S_OK;
+                }
+
+                std::string_view functionName;
+                error = document["func"].get_string().get(functionName);
+                if (error != simdjson::error_code::SUCCESS)
+                {
+                    ::CoTaskMemFree(buffer);
+                    return S_OK;
+                }
+
+                std::string_view argumentData;
+                error = document["args"].raw_json().get(argumentData);
+                if (error != simdjson::error_code::SUCCESS)
+                {
+                    ::CoTaskMemFree(buffer);
+                    return S_OK;
+                }
+
+                auto found = bindCallbacks.find(std::string(functionName));
+                if (found != bindCallbacks.end())
+                {
+                    found->second(index, argumentData);
+                }
+
+                ::CoTaskMemFree(buffer);
+                return S_OK;
+            }).Get(),
             &eventToken));
 
         winrt::com_ptr<ICoreWebView2Settings> settings;
@@ -334,19 +329,19 @@ namespace libwebview
     auto Edge::run(std::string_view const urlPath) -> void
     {
         throwIfFailed(webview->AddScriptToExecuteOnDocumentCreated(
-            internal::toWstring(std::vformat(js::onLoadHTMLInjection, std::make_format_args("window.chrome.webview")))
+            internal::toWString(std::vformat(js::onLoadHTMLInjection, std::make_format_args("window.chrome.webview")))
                 .c_str(),
             nullptr));
 
         if (urlPath.starts_with("http://") || urlPath.starts_with("https://"))
         {
-            throwIfFailed(webview->Navigate(internal::toWstring(urlPath).c_str()));
+            throwIfFailed(webview->Navigate(internal::toWString(urlPath).c_str()));
         }
         else
         {
             std::filesystem::path const currentPath = std::filesystem::current_path();
             throwIfFailed(
-                webview->Navigate(internal::toWstring("file:///" + (currentPath / urlPath).generic_string()).c_str()));
+                webview->Navigate(internal::toWString("file:///" + (currentPath / urlPath).generic_string()).c_str()));
         }
 
         MSG msg;
@@ -386,7 +381,7 @@ namespace libwebview
 
     auto Edge::executeJavaScript(std::string_view const executeCode) -> void
     {
-        throwIfFailed(webview->ExecuteScript(internal::toWstring(executeCode).c_str(), nullptr));
+        throwIfFailed(webview->ExecuteScript(internal::toWString(executeCode).c_str(), nullptr));
     }
 
     auto Edge::quit() -> void
@@ -394,8 +389,8 @@ namespace libwebview
         ::PostQuitMessage(0);
     }
 
-    auto Edge::showSaveDialog(std::filesystem::path const& initialPath,
-                              std::string_view const filter) -> std::optional<std::filesystem::path>
+    auto Edge::showSaveDialog(std::filesystem::path const& initialPath, std::string_view const filter)
+        -> std::optional<std::filesystem::path>
     {
         winrt::com_ptr<IFileDialog> fileDialog;
         throwIfFailed(CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_INPROC_SERVER, __uuidof(IFileDialog),
@@ -405,7 +400,7 @@ namespace libwebview
         throwIfFailed(fileDialog->GetOptions(&flags));
         throwIfFailed(fileDialog->SetOptions(flags | FOS_FORCEFILESYSTEM));
 
-        std::wstring const currentFolderPath = internal::toWstring(initialPath.string());
+        std::wstring const currentFolderPath = internal::toWString(initialPath.string());
         winrt::com_ptr<IShellItem> currentFolder;
 
         throwIfFailed(SHCreateItemFromParsingName(currentFolderPath.c_str(), NULL, __uuidof(IShellItem),
@@ -420,7 +415,7 @@ namespace libwebview
         {
             for (uint32_t const i : std::views::iota(0u, wFilterTypes.size()))
             {
-                wFilterTypes[i] = internal::toWstring(fileTypes[i]);
+                wFilterTypes[i] = internal::toWString(fileTypes[i]);
             }
 
             for (size_t i = 0; i < fileTypes.size(); i += 2)
@@ -444,7 +439,7 @@ namespace libwebview
             hr = fileDialog->GetResult(result.put());
             if (SUCCEEDED(hr))
             {
-                PWSTR selectFilePath = nullptr;
+                PWSTR selectFilePath;
                 throwIfFailed(result->GetDisplayName(SIGDN_FILESYSPATH, &selectFilePath));
 
                 uint32_t typeIndex;
@@ -493,7 +488,7 @@ namespace libwebview
             }
         }
 
-        throwIfFailed(TaskDialog(nullptr, nullptr, internal::toWstring(title).c_str(), nullptr,
-                                 internal::toWstring(message).c_str(), TDCBF_OK_BUTTON, iconPath, nullptr));
+        throwIfFailed(TaskDialog(nullptr, nullptr, internal::toWString(title).c_str(), nullptr,
+                                 internal::toWString(message).c_str(), TDCBF_OK_BUTTON, iconPath, nullptr));
     }
 } // namespace libwebview
