@@ -415,7 +415,7 @@ namespace libwebview
         }
 
         template <typename Func>
-        auto setIdle(Func&& function) -> void
+        auto setIdleCallback(Func&& function) -> void
         {
             platform->setIdleCallback([&, function]() {
                 resultExecutor->loop(10);
