@@ -80,12 +80,12 @@ namespace libwebview
         App(std::string_view const appName, std::string_view const title, uint32_t const width, uint32_t const height,
             bool const resizeable, bool const debugMode)
         {
-            platform = Platform::createInstance(appName, title, width, height, resizeable, debugMode);
+            platform = Platform::create(appName, title, width, height, resizeable, debugMode);
 
             threadPoolExecutor = runtime.thread_pool_executor();
             resultExecutor = runtime.make_manual_executor();
 
-            platform->setIdle([&]() { resultExecutor->loop(10); });
+            platform->setIdleCallback([&]() { resultExecutor->loop(10); });
         }
 
         auto quit() -> void
@@ -417,7 +417,7 @@ namespace libwebview
         template <typename Func>
         auto setIdle(Func&& function) -> void
         {
-            platform->setIdle([&, function]() {
+            platform->setIdleCallback([&, function]() {
                 resultExecutor->loop(10);
                 function();
             });

@@ -1,24 +1,83 @@
-![splash](https://github.com/a3st/libwebview/raw/main/media/splash-main.png)
+![splash](media/splash-main.png)
 
 ## Features
 
 * Rapid development of desktop applications using Web technologies
 * Minimum application weight due to the use of the WebView system component
 * A very simple library with a simple C/C++ interface
+* Support bindings of async functions (only C++)
 
-## Requirements
+## Build
+
+### Requirements
 
 * Windows
-    * Installed WebView Edge component
-    * Python 3.10+
+    * WebView2 Edge
+    * Python 3.10+ (Optional)
+    * Microsoft Visual Studio /or Build Tools 2022
 
-## Install
+* Linux
+    * GTK 4
+    * WebkitGTK 6.0
+    * LibAdwaita 1.0
+    * Python 3.10+ (Optional)
+    * Clang 18
+
+## Examples
+
+```c++
+#include <webview.hpp>
+
+int32_t main(int32_t argc, char** argv) {
+    try 
+    {
+        libwebview::App app("TestApp", "Test App", 800, 600, true, true);
+        app.run("resources/index.html");
+        return EXIT_SUCCESS;
+    } 
+    catch(std::runtime_error e) 
+    {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+}
+```
+
+```c++
+#include <webview.hpp>
+
+int32_t main(int32_t argc, char** argv) {
+    try 
+    {
+        libwebview::App app("TestApp", "Async App", 800, 600, true, true);
+
+        app.bind("asyncHelloWorld", []() -> concurrencpp::result<void> {
+            // Emulate high load work
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            std::cout << "Async hello world!" << std::endl;
+            co_return;
+        });
+
+        app.run("resources/index.html");
+        return EXIT_SUCCESS;
+    } 
+    catch(std::runtime_error e) 
+    {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+}
+```
+
+## Python Bindings
+
+### Install
 
 ```bash
 pip install libwebview
 ```
 
-## Python Example
+### Python Example
 
 ```python
 from libwebview import App
@@ -39,35 +98,12 @@ app.bind(window_close)
 app.run("resources/index.html")
 ```
 
-## C++ Example
-
-```c++
-#include <webview.hpp>
-
-int32_t main(int32_t argc, char** argv) {
-    try {
-        libwebview::App app("TestApp", "Test App", 800, 600, true, true);
-        app.run("resources/index.html");
-    } catch(std::runtime_error e) {
-        std::cerr << e.what() << std::endl;
-    }
-    return EXIT_SUCCESS;
-}
-```
-
-## Wiki [Goto](https://github.com/a3st/libwebview/wiki)
-
 ## Showcase
 
 ### [IONENGINE - Editor](https://github.com/a3st/IONENGINE)
-![App](https://github.com/a3st/libwebview/raw/main/media/ionengine-editor.png)
+![ionengine-editor](media/ionengine-editor.png)
 
 ## Roadmap
 
-- [x] Windows implementation (WebView Edge)
-- [ ] Linux implementation (WebKit)
-- [ ] Android implementation (Android WebView)
-
-## License
-
-Check LICENSE for additional information
+- [x] Windows implementation (WebView2 Edge)
+- [x] Linux implementation (WebKit)

@@ -6,17 +6,15 @@
 
 #ifdef LIB_WEBVIEW_EDGE
 #include "platform/edge.hpp"
-#endif
-
-#ifdef LIB_WEBVIEW_WEBKIT
+#elif LIB_WEBVIEW_WEBKIT
 #include "platform/webkit.hpp"
 #endif
 
 namespace libwebview
 {
-    auto Platform::createInstance(std::string_view const appName, std::string_view const title, uint32_t const width,
-                                  uint32_t const height, bool const resizeable, bool const debugMode)
-        -> std::unique_ptr<Platform>
+    auto Platform::create(std::string_view const appName, std::string_view const title, uint32_t const width,
+                                  uint32_t const height, bool const resizeable,
+                                  bool const debugMode) -> std::unique_ptr<Platform>
     {
 #ifdef LIB_WEBVIEW_EDGE
         return std::make_unique<Edge>(appName, title, width, height, resizeable, debugMode);
@@ -26,20 +24,6 @@ namespace libwebview
 #error libwebview target platform is not defined
         return nullptr;
 #endif
-    }
-
-    auto Platform::setIdle(idle_func_t&& function) -> void
-    {
-        idleCallback = std::move(function);
-    }
-
-    auto Platform::bind(std::string_view const functionName, bind_func_t&& function) -> void
-    {
-        if (bindCallbacks.find(std::string(functionName)) != bindCallbacks.end())
-        {
-            throw std::runtime_error("Cannot to bind a function that already exists");
-        }
-        bindCallbacks.emplace(std::string(functionName), std::move(function));
     }
 
     auto Platform::result(uint64_t const index, bool const success, std::string_view const data) -> void

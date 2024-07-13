@@ -22,7 +22,7 @@ namespace libwebview
 
         virtual ~Platform() = default;
 
-        static auto createInstance(std::string_view const appName, std::string_view const title, uint32_t const width,
+        static auto create(std::string_view const appName, std::string_view const title, uint32_t const width,
                                    uint32_t const height, bool const resizeable,
                                    bool const debugMode) -> std::unique_ptr<Platform>;
 
@@ -38,9 +38,23 @@ namespace libwebview
 
         virtual auto quit() -> void = 0;
 
-        auto setIdle(idle_func_t&& function) -> void;
+        template <typename Func>
+        auto setIdleCallback(Func&& function) -> void
+        {
+            idleCallback = [function]() { function(); };
+        }
 
-        auto bind(std::string_view const functionName, bind_func_t&& function) -> void;
+        template <typename Func>
+        auto bind(std::string_view const functionName, Func&& function) -> void
+        {
+            if (bindCallbacks.find(std::string(functionName)) != bindCallbacks.end())
+            {
+                throw std::runtime_error("Cannot to bind a function that already exists");
+            }
+            bindCallbacks.emplace(
+                std::string(functionName),
+                [function](uint64_t const index, std::string_view const arguments) { function(index, arguments); });
+        }
 
         auto result(uint64_t const index, bool const success, std::string_view const data) -> void;
 

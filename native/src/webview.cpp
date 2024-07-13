@@ -11,7 +11,7 @@ namespace libwebview
     {
         try
         {
-            return Platform::createInstance(app_name, title, width, height, resizeable, debug_mode).release();
+            return Platform::create(app_name, title, width, height, resizeable, debug_mode).release();
         }
         catch (std::runtime_error e)
         {
@@ -83,6 +83,6 @@ namespace libwebview
 
     void webview_set_idle(C_Webview instance, void (*function)(void*), void* context)
     {
-        reinterpret_cast<Platform*>(instance)->setIdle([function, context]() { function(context); });
+        reinterpret_cast<Platform*>(instance)->setIdleCallback([function, context]() { function(context); });
     }
 } // namespace libwebview

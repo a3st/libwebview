@@ -23,10 +23,8 @@ class WebViewLib:
                         raise RuntimeError("Your system is not supported")
 
                 self.lib = cdll.LoadLibrary(
-                    os.path.join(LIB_PATH, "libwebview_edge.dll")
+                    os.path.join(LIB_PATH, "libwebview.dll")
                 )
-            case "Android":
-                self.lib = None
             case _:
                 raise RuntimeError("Your system is not supported")
 
@@ -78,12 +76,6 @@ class WebViewLib:
             ctypes.c_void_p,
             ctypes.c_uint64,
             ctypes.c_bool,
-            ctypes.c_char_p,
-        ]
-
-        self.lib.webview_emit.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_char_p,
             ctypes.c_char_p,
         ]
 

@@ -23,7 +23,6 @@ class CMakeBuildExt(build_ext):
 
         match platform.system():
             case "Windows":
-                platform_type = "edge"
                 arch_type = "x86_64"
 
         cmake_args = [
@@ -45,7 +44,7 @@ class CMakeBuildExt(build_ext):
             "--config",
             config,
             "--target",
-            ext.name + "_" + platform_type,
+            ext.name,
         ]
 
         try:
@@ -86,7 +85,7 @@ root_path = pathlib.Path(__file__).parent.parent.parent.resolve()
 setup(
     name="libwebview",
     packages=["libwebview"],
-    version="1.1.1",
+    version="1.2.0",
     author="Dmitriy Lukovenko",
     author_email="mludima23@gmail.com",
     description="Library for application development using WebView",
