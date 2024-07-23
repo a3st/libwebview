@@ -103,6 +103,9 @@ app.run("resources/index.html")
 ### [IONENGINE - Editor](https://github.com/a3st/IONENGINE)
 ![ionengine-editor](media/ionengine-editor.png)
 
+### [Notes](https://github.com/a3st/Notes)
+![notes](media/notes.png)
+
 ## Roadmap
 
 - [x] Windows implementation (WebView2 Edge)
