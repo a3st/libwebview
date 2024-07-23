@@ -51,7 +51,7 @@ int32_t main(int32_t argc, char** argv) {
     {
         libwebview::App app("TestApp", "Async App", 800, 600, true, true);
 
-        app.bind("asyncHelloWorld", []() -> concurrencpp::result<void> {
+        app.bind("asyncHelloWorld", []() -> libwebview::result<void> {
             // Emulate high load work
             std::this_thread::sleep_for(std::chrono::seconds(5));
             std::cout << "Async hello world!" << std::endl;
