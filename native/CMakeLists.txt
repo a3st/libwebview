@@ -2,20 +2,25 @@
 
 cmake_minimum_required(VERSION 3.25.1)
 
-project(libwebview VERSION 1.0.0 LANGUAGES C CXX)
+project(libwebview 
+    VERSION 1.0.0 
+    DESCRIPTION "Library for application development using WebView"
+    HOMEPAGE_URL https://github.com/a3st
+    LANGUAGES C CXX)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+option(BUILD_TESTING "Build libwebview tests" OFF)
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_C_STANDARD 11)
 
 include(FetchContent)
 
 FetchContent_Declare(simdjson
-    SOURCE_DIR ${PROJECT_SOURCE_DIR}/thirdparty/simdjson
+    GIT_REPOSITORY https://github.com/simdjson/simdjson.git
     BINARY_DIR ${CMAKE_BINARY_DIR}/thirdparty/simdjson)
 
 FetchContent_Declare(concurrencpp
-    SOURCE_DIR ${PROJECT_SOURCE_DIR}/thirdparty/concurrencpp
+    GIT_REPOSITORY https://github.com/David-Haim/concurrencpp.git
     BINARY_DIR ${CMAKE_BINARY_DIR}/thirdparty/concurrencpp)
 
 FetchContent_MakeAvailable(simdjson concurrencpp)
@@ -80,7 +85,15 @@ target_link_libraries(libwebview PUBLIC
 target_compile_definitions(libwebview PUBLIC LIB_WEBVIEW_WEBKIT)
 endif()
 
-# Tests
+# Build tests
+if(BUILD_TESTING)
+# Async Test
 add_executable(async_test tests/async_test.cpp)
 
 target_link_libraries(async_test PRIVATE libwebview)
+
+# Sync Test
+add_executable(sync_test tests/sync_test.cpp)
+
+target_link_libraries(sync_test PRIVATE libwebview)
+endif()

@@ -85,7 +85,7 @@ root_path = pathlib.Path(__file__).parent.parent.parent.resolve()
 setup(
     name="libwebview",
     packages=["libwebview"],
-    version="1.2.0",
+    version="1.2.5",
     author="Dmitriy Lukovenko",
     author_email="mludima23@gmail.com",
     description="Library for application development using WebView",
@@ -95,7 +95,6 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
-        "Operating System :: Android",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX :: Linux",
     ],

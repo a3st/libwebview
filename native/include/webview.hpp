@@ -74,6 +74,9 @@ namespace libwebview
         };
     } // namespace internal
 
+    template<typename Type>
+    using result = concurrencpp::result<Type>;
+
     class App
     {
       public:
@@ -431,7 +434,6 @@ namespace libwebview
 
       private:
         std::unique_ptr<Platform> platform;
-
         concurrencpp::runtime runtime;
         std::shared_ptr<concurrencpp::thread_pool_executor> threadPoolExecutor;
         std::shared_ptr<concurrencpp::manual_executor> resultExecutor;

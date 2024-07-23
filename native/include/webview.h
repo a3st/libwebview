@@ -96,10 +96,10 @@ extern "C"
     LIB_WEBVIEW_API void webview_result(C_Webview instance, uint64_t index, bool success, char const* data);
 
     /*!
-        \brief Set application idle function
+        \brief Set application idle callback
 
         \param instance pointer to application
-        \param function a idle function (context)
+        \param function a idle callback (context)
     */
-    LIB_WEBVIEW_API void webview_set_idle(C_Webview instance, void (*function)(void*), void* context);
+    LIB_WEBVIEW_API void webview_set_idle_callback(C_Webview instance, void (*function)(void*), void* context);
 }

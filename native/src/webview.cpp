@@ -81,7 +81,7 @@ namespace libwebview
         reinterpret_cast<Platform*>(instance)->result(index, success, data);
     }
 
-    void webview_set_idle(C_Webview instance, void (*function)(void*), void* context)
+    void webview_set_idle_callback(C_Webview instance, void (*function)(void*), void* context)
     {
         reinterpret_cast<Platform*>(instance)->setIdleCallback([function, context]() { function(context); });
     }

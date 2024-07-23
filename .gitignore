@@ -5,6 +5,3 @@ __pycache__
 dist
 *.egg-info
 CMakeSettings.json
-native/thirdparty/cef/*
-!README.md
-!LICENSE.txt
