@@ -2,10 +2,10 @@
 
 ## Features
 
-* Rapid development of desktop applications using Web technologies
+* Rapid development of desktop applications using the Web technologies
 * Minimum application weight due to the use of the WebView system component
 * A very simple library with a simple C/C++ interface
-* Support bindings of async functions (only C++)
+* Supports bindings of an async functions (only C++)
 
 ## Build
 

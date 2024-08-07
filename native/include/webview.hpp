@@ -74,7 +74,7 @@ namespace libwebview
         };
     } // namespace internal
 
-    template<typename Type>
+    template <typename Type>
     using result = concurrencpp::result<Type>;
 
     class App
@@ -91,31 +91,59 @@ namespace libwebview
             platform->setIdleCallback([&]() { resultExecutor->loop(10); });
         }
 
+        /*!
+            \brief Quits the application
+        */
         auto quit() -> void
         {
             platform->quit();
         }
 
+        /*!
+            \brief Runs the application's main loop
+            \param urlPath startup the URL path (if URL starts with https:// or http://, the app runs a remote
+           resource. Otherwise, the app runs a local resource)
+        */
         auto run(std::string_view const urlPath) -> void
         {
             platform->run(urlPath);
         }
 
+        /*!
+            \brief Sets the application's window new size
+            \param width the new window width
+            \param height the new window height
+        */
         auto setWindowSize(uint32_t const width, uint32_t const height) -> void
         {
             platform->setWindowSize(width, height);
         }
 
+        /*!
+            \brief Sets the application's window minimum size
+            \param width the window minimum width
+            \param height the window minimum height
+        */
         auto setWindowMinSize(uint32_t const width, uint32_t const height) -> void
         {
             platform->setWindowMinSize(width, height);
         }
 
+        /*!
+            \brief Sets the application's window maximum size
+            \param width the window maximum width
+            \param height the window maximum height
+        */
         auto setWindowMaxSize(uint32_t const width, uint32_t const height) -> void
         {
             platform->setWindowMaxSize(width, height);
         }
 
+        /*!
+            \brief Binds the function for call from JavaScript
+            \param functionName the function name
+            \param function the binded callback
+        */
         template <typename Func>
         auto bind(std::string_view const functionName, Func&& function) -> void
         {
@@ -412,11 +440,21 @@ namespace libwebview
             });
         }
 
+        /*!
+            \brief Returns the result to JavaScript function
+            \param index the function index
+            \param success returns true when function ended successfully
+            \param data data which will return to JavaScript
+        */
         auto result(uint64_t const index, bool const success, std::string_view const data) -> void
         {
             platform->result(index, success, data);
         }
 
+        /*!
+            \brief Sets the application's idle function (at main loop end)
+            \param function the binded idle callback
+        */
         template <typename Func>
         auto setIdleCallback(Func&& function) -> void
         {
@@ -426,6 +464,11 @@ namespace libwebview
             });
         }
 
+        /*!
+            \brief Shows the save dialog box
+            \param initialPath the startup directory path
+            \param filter the collection of using format filters
+        */
         auto showSaveDialog(std::filesystem::path const& initialPath,
                             std::string_view const filter) -> std::optional<std::filesystem::path>
         {

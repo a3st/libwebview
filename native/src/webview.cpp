@@ -85,4 +85,9 @@ namespace libwebview
     {
         reinterpret_cast<Platform*>(instance)->setIdleCallback([function, context]() { function(context); });
     }
+
+    void webview_show_save_dialog(C_Webview instance, char const* initial_path, char const* filter)
+    {
+        reinterpret_cast<Platform*>(instance)->showSaveDialog(initial_path, filter);
+    }
 } // namespace libwebview
